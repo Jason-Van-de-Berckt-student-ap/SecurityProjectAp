@@ -2,13 +2,14 @@ from flask import Flask, render_template, request, jsonify
 import dns.resolver
 import sqlite3
 import csv
+import json
 from datetime import datetime
 import requests
 import socket
 import ssl
 import concurrent.futures
 import tldextract
-from difflib import SequenceMatcher
+import re
 from urllib.parse import urlparse
 import os
 
@@ -26,10 +27,9 @@ def setup_database():
                   ssl_info TEXT,
                   vulnerabilities TEXT,
                   subdomains TEXT,
-                  shadow_domains TEXT)''')
+                  related_domains TEXT)''')
     conn.commit()
     conn.close()
-
 # DNS Records function
 def get_dns_records(domain):
     records = {}
@@ -193,62 +193,147 @@ def find_subdomains(domain):
     return results
 
 # Shadow domain detection function
-def find_shadow_domains(domain):
-    shadow_domains = []
-    ext = tldextract.extract(domain)
-    domain_name = ext.domain
-    tld = ext.suffix
+def find_related_domains(domain):
+    """
+    Find domains that are likely related to the target domain through various methods
+    """
+    related_domains = []
     
-    def generate_variations():
-        variations = set()
-        
-        # Character swapping
-        chars = list(domain_name)
-        for i in range(len(chars)-1):
-            chars[i], chars[i+1] = chars[i+1], chars[i]
-            variations.add(''.join(chars))
-            chars[i], chars[i+1] = chars[i+1], chars[i]
-        
-        # Common TLD variations
-        common_tlds = ['com', 'net', 'org', 'info']
-        for variation in variations.copy():
-            for new_tld in common_tlds:
-                if new_tld != tld:
-                    variations.add(f"{variation}.{new_tld}")
-        
-        return variations
-
-    def check_domain_existence(domain_variation):
+    def get_ssl_organization(domain):
         try:
-            answers = dns.resolver.resolve(domain_variation, 'A')
-            ips = [str(rdata) for rdata in answers]
-            
-            similarity = SequenceMatcher(None, domain_name, 
-                                      tldextract.extract(domain_variation).domain).ratio()
-            
-            return {
-                'domain': domain_variation,
-                'ips': ips,
-                'similarity': round(similarity * 100, 2),
-                'risk_level': 'High' if similarity > 0.8 else 'Medium' if similarity > 0.6 else 'Low'
-            }
-        except:
+            context = ssl.create_default_context()
+            with socket.create_connection((domain, 443)) as sock:
+                with context.wrap_socket(sock, server_hostname=domain) as ssock:
+                    cert = ssock.getpeercert()
+                    org_info = {}
+                    for field in cert['subject']:
+                        if field[0][0] == 'organizationName':
+                            org_info['organization'] = field[0][1]
+                        elif field[0][0] == 'organizationalUnitName':
+                            org_info['unit'] = field[0][1]
+                    return org_info
+        except Exception as e:
+            print(f"SSL Error: {str(e)}")
             return None
 
-    variations = generate_variations()
-    
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        future_to_domain = {executor.submit(check_domain_existence, var): var 
-                          for var in variations}
-        
-        for future in concurrent.futures.as_completed(future_to_domain):
-            result = future.result()
-            if result:
-                shadow_domains.append(result)
-    
-    return sorted(shadow_domains, key=lambda x: x['similarity'], reverse=True)
+    def search_ct_logs_by_org(org_name):
+        domains = set()
+        try:
+            url = f"https://crt.sh/?q={org_name}&output=json"
+            response = requests.get(url, timeout=10)
+            if response.ok:
+                data = response.json()
+                for entry in data:
+                    name_value = entry['name_value'].lower()
+                    # Filter out wildcards and non-domains
+                    if '*' not in name_value and ' ' not in name_value:
+                        domains.add(name_value)
+        except Exception as e:
+            print(f"CT Log Error: {str(e)}")
+        return list(domains)
 
-# Export results to CSV
+    def get_nameservers(domain):
+        try:
+            resolver = dns.resolver.Resolver()
+            ns_records = resolver.resolve(domain, 'NS')
+            return [str(ns) for ns in ns_records]
+        except Exception as e:
+            print(f"NS Error: {str(e)}")
+            return []
+
+    def get_spf_dmarc(domain):
+        records = {}
+        try:
+            resolver = dns.resolver.Resolver()
+            # Get SPF record
+            txt_records = resolver.resolve(domain, 'TXT')
+            for record in txt_records:
+                record_text = str(record)
+                if 'v=spf1' in record_text:
+                    records['spf'] = record_text
+            
+            # Get DMARC record
+            dmarc_records = resolver.resolve(f'_dmarc.{domain}', 'TXT')
+            for record in dmarc_records:
+                record_text = str(record)
+                if 'v=DMARC1' in record_text:
+                    records['dmarc'] = record_text
+        except Exception as e:
+            print(f"SPF/DMARC Error: {str(e)}")
+        return records
+
+    def reverse_dns_lookup(ip):
+        try:
+            return socket.gethostbyaddr(ip)[0]
+        except Exception:
+            return None
+
+    # Process SSL organization information
+    print(f"Checking SSL organization for {domain}")
+    org_info = get_ssl_organization(domain)
+    if org_info and 'organization' in org_info:
+        print(f"Found organization: {org_info['organization']}")
+        ct_domains = search_ct_logs_by_org(org_info['organization'])
+        for domain_found in ct_domains:
+            if domain_found != domain:
+                related_domains.append({
+                    'domain': domain_found,
+                    'relation_type': 'Same Organization (SSL)',
+                    'confidence': 'High',
+                    'evidence': f"Organization: {org_info['organization']}"
+                })
+
+    # Check nameservers
+    print("Checking nameservers")
+    target_ns = get_nameservers(domain)
+    if target_ns:
+        related_domains.append({
+            'domain': 'NS Information',
+            'relation_type': 'Nameserver Pattern',
+            'confidence': 'Medium',
+            'evidence': f"Nameservers: {', '.join(target_ns)}"
+        })
+
+    # Check mail infrastructure
+    print("Checking mail infrastructure")
+    mail_records = get_spf_dmarc(domain)
+    if mail_records:
+        if 'spf' in mail_records:
+            spf_includes = re.findall(r'include:([^\s]+)', mail_records['spf'])
+            for included_domain in spf_includes:
+                related_domains.append({
+                    'domain': included_domain,
+                    'relation_type': 'Mail Infrastructure',
+                    'confidence': 'Medium',
+                    'evidence': f"Included in SPF record"
+                })
+
+    # Check IP neighborhood
+    print("Checking IP neighborhood")
+    try:
+        ip = socket.gethostbyname(domain)
+        ip_parts = ip.split('.')
+        base_ip = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}"
+        for i in range(1, 10):
+            check_ip = f"{base_ip}.{i}"
+            hostname = reverse_dns_lookup(check_ip)
+            if hostname and hostname != domain:
+                related_domains.append({
+                    'domain': hostname,
+                    'relation_type': 'Same IP Range',
+                    'confidence': 'Medium',
+                    'evidence': f"IP: {check_ip}"
+                })
+    except Exception as e:
+        print(f"IP Range Error: {str(e)}")
+
+    return sorted(related_domains, key=lambda x: {
+        'High': 3,
+        'Medium': 2,
+        'Low': 1
+    }[x['confidence']], reverse=True)
+
+# Updated export_to_csv function
 def export_to_csv(scan_results, domain):
     filename = f'scan_results_{domain}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
     with open(filename, 'w', newline='') as f:
@@ -268,58 +353,139 @@ def export_to_csv(scan_results, domain):
         for sub in scan_results['subdomains']:
             writer.writerow(['Subdomain', sub['subdomain'], f"IP: {sub['ip']}, Status: {sub['status']}"])
         
-        # Write shadow domains
-        for shadow in scan_results['shadow_domains']:
-            writer.writerow(['Shadow Domain', shadow['domain'], 
-                           f"Similarity: {shadow['similarity']}%, Risk: {shadow['risk_level']}"])
+        # Write related domains
+        for related in scan_results['related_domains']:
+            writer.writerow(['Related Domain', related['domain'], 
+                           f"Type: {related['relation_type']}, Confidence: {related['confidence']}, Evidence: {related['evidence']}"])
 
     return filename
-
-# Flask routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Updated scan route
 @app.route('/scan', methods=['POST'])
 def scan_domain():
     domain = request.form['domain']
-    
-    # Perform all scans
-    dns_info = get_dns_records(domain)
-    ssl_info = get_ssl_info(domain)
-    vulns = check_vulnerabilities_alternative(domain)
-    subdomains = find_subdomains(domain)
-    shadow_domains = find_shadow_domains(domain)
-    
-    # Store results in database
-    conn = sqlite3.connect('easm.db')
-    c = conn.cursor()
-    c.execute('''INSERT INTO scans 
-                 (domain, scan_date, dns_records, ssl_info, vulnerabilities, subdomains, shadow_domains)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)''',
-              (domain, datetime.now(), str(dns_info), str(ssl_info), str(vulns), 
-               str(subdomains), str(shadow_domains)))
-    conn.commit()
-    conn.close()
-    
-    # Export results
-    scan_results = {
-        'dns_info': dns_info,
-        'ssl_info': ssl_info,
-        'vulnerabilities': vulns,
-        'subdomains': subdomains,
-        'shadow_domains': shadow_domains
+    scan_options = {
+        'dns_scan': 'dns_scan' in request.form,
+        'ssl_scan': 'ssl_scan' in request.form,
+        'subdomain_scan': 'subdomain_scan' in request.form,
+        'related_domains': 'related_domains' in request.form,
+        'vuln_scan': 'vuln_scan' in request.form
     }
     
-    export_to_csv(scan_results, domain)
+    # Initialize results dictionary
+    results = {
+        'dns_info': {},
+        'ssl_info': {},
+        'vulnerabilities': [],
+        'subdomains': [],
+        'related_domains': []
+    }
     
-    return render_template('results.html',
-                         domain=domain,
-                         dns_info=dns_info,
-                         ssl_info=ssl_info,
-                         vulnerabilities=vulns,
-                         subdomains=subdomains,
-                         shadow_domains=shadow_domains)
+    try:
+        # Perform scans based on selected options
+        if scan_options['dns_scan']:
+            print(f"Starting DNS scan for {domain}")
+            results['dns_info'] = get_dns_records(domain)
+        
+        if scan_options['ssl_scan']:
+            print(f"Starting SSL scan for {domain}")
+            results['ssl_info'] = get_ssl_info(domain)
+        
+        if scan_options['vuln_scan']:
+            print(f"Starting vulnerability scan for {domain}")
+            results['vulnerabilities'] = check_vulnerabilities_alternative(domain)
+        
+        if scan_options['subdomain_scan']:
+            print(f"Starting subdomain discovery for {domain}")
+            results['subdomains'] = find_subdomains(domain)
+        
+        if scan_options['related_domains']:
+            print(f"Starting related domain discovery for {domain}")
+            results['related_domains'] = find_related_domains(domain)
+        
+        # Store results in database
+        conn = sqlite3.connect('easm.db')
+        c = conn.cursor()
+        c.execute('''INSERT INTO scans 
+                     (domain, scan_date, dns_records, ssl_info, vulnerabilities, 
+                      subdomains, related_domains)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                  (domain, 
+                   datetime.now(),
+                   json.dumps(results['dns_info']),
+                   json.dumps(results['ssl_info']),
+                   json.dumps(results['vulnerabilities']),
+                   json.dumps(results['subdomains']),
+                   json.dumps(results['related_domains'])))
+        conn.commit()
+        conn.close()
+        
+        # Export results to CSV
+        csv_file = export_to_csv(results, domain)
+        
+        # Render template with results
+        return render_template('results.html',
+                             domain=domain,
+                             dns_info=results['dns_info'],
+                             ssl_info=results['ssl_info'],
+                             vulnerabilities=results['vulnerabilities'],
+                             subdomains=results['subdomains'],
+                             related_domains=results['related_domains'],
+                             csv_file=csv_file)
+                             
+    except Exception as e:
+        # Log the error
+        print(f"Error during scan: {str(e)}")
+        
+        # Return error page or error message
+        return render_template('results.html',
+                             domain=domain,
+                             error=str(e),
+                             dns_info={},
+                             ssl_info={'error': 'Scan failed'},
+                             vulnerabilities=[],
+                             subdomains=[],
+                             related_domains=[])
+
+# Updated export_to_csv function to handle new format
+def export_to_csv(scan_results, domain):
+    filename = f'scan_results_{domain}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    with open(filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Category', 'Finding', 'Details'])
+        
+        # Write DNS records
+        for record_type, records in scan_results['dns_info'].items():
+            for record in records:
+                writer.writerow(['DNS Record', record_type, record])
+        
+        # Write SSL info
+        if not isinstance(scan_results['ssl_info'], dict) or 'error' not in scan_results['ssl_info']:
+            for key, value in scan_results['ssl_info'].items():
+                writer.writerow(['SSL Certificate', key, value])
+        
+        # Write vulnerabilities
+        for vuln in scan_results['vulnerabilities']:
+            writer.writerow(['Vulnerability', 
+                           f"{vuln['title']} ({vuln['severity']})", 
+                           vuln['description']])
+        
+        # Write subdomains
+        for sub in scan_results['subdomains']:
+            writer.writerow(['Subdomain', 
+                           sub['subdomain'], 
+                           f"IP: {sub['ip']}, Status: {sub['status']}"])
+        
+        # Write related domains
+        for domain in scan_results['related_domains']:
+            writer.writerow(['Related Domain',
+                           f"{domain['domain']} ({domain['confidence']})",
+                           f"Type: {domain['relation_type']}, Evidence: {domain['evidence']}"])
+
+    return filename
 
 if __name__ == '__main__':
     setup_database()

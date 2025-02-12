@@ -10,7 +10,7 @@
         <!-- Header -->
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-800">EASM Domain Scanner</h1>
-            <p class="text-gray-600 mt-2">Scan domains for DNS records, SSL certificates, and security information</p>
+            <p class="text-gray-600 mt-2">Comprehensive domain analysis and attack surface mapping tool</p>
         </div>
 
         <!-- Scan Form -->
@@ -26,7 +26,7 @@
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 
-                <!-- Options (if you want to add scan options later) -->
+                <!-- Enhanced Scan Options -->
                 <div class="mb-4">
                     <p class="text-gray-700 font-medium mb-2">Scan Options:</p>
                     <div class="space-y-2">
@@ -37,6 +37,18 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="ssl_scan" checked class="form-checkbox">
                             <span class="ml-2">SSL Certificate</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="subdomain_scan" checked class="form-checkbox">
+                            <span class="ml-2">Subdomain Discovery</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="related_domains" checked class="form-checkbox">
+                            <span class="ml-2">Related Domains</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" name="vuln_scan" checked class="form-checkbox">
+                            <span class="ml-2">Vulnerability Scan</span>
                         </label>
                     </div>
                 </div>
@@ -51,16 +63,16 @@
         <!-- Features -->
         <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-bold mb-2">DNS Analysis</h3>
-                <p class="text-gray-600">Check A, AAAA, MX, NS, TXT, and SOA records for comprehensive DNS information.</p>
+                <h3 class="text-lg font-bold mb-2">Infrastructure Analysis</h3>
+                <p class="text-gray-600">Comprehensive DNS analysis, SSL certificate verification, and subdomain discovery.</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-bold mb-2">SSL Certificate</h3>
-                <p class="text-gray-600">Verify SSL certificate validity, expiration dates, and issuer information.</p>
+                <h3 class="text-lg font-bold mb-2">Related Domain Detection</h3>
+                <p class="text-gray-600">Identify domains related through organizational structure, infrastructure, or operations.</p>
             </div>
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-bold mb-2">Security Checks</h3>
-                <p class="text-gray-600">Basic security checks and vulnerability assessment of the domain.</p>
+                <h3 class="text-lg font-bold mb-2">Security Assessment</h3>
+                <p class="text-gray-600">Vulnerability scanning, security header analysis, and attack surface mapping.</p>
             </div>
         </div>
     </div>

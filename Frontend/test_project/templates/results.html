@@ -49,6 +49,52 @@
             {% endif %}
         </div>
 
+        <!-- Related Domains Section (New) -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Related Domains</h2>
+            {% if related_domains %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 text-left">Domain</th>
+                                <th class="px-4 py-2 text-left">Relation Type</th>
+                                <th class="px-4 py-2 text-left">Confidence</th>
+                                <th class="px-4 py-2 text-left">Evidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for domain in related_domains %}
+                                <tr class="border-t">
+                                    <td class="px-4 py-2 font-medium">{{ domain.domain }}</td>
+                                    <td class="px-4 py-2 text-gray-600">{{ domain.relation_type }}</td>
+                                    <td class="px-4 py-2">
+                                        <span class="px-2 py-1 text-sm rounded
+                                            {% if domain.confidence == 'High' %}
+                                                bg-green-100 text-green-800
+                                            {% elif domain.confidence == 'Medium' %}
+                                                bg-yellow-100 text-yellow-800
+                                            {% else %}
+                                                bg-blue-100 text-blue-800
+                                            {% endif %}">
+                                            {{ domain.confidence }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-2 text-gray-600">{{ domain.evidence }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-sm text-gray-600">
+                    <p>* Confidence levels indicate the reliability of the relationship between domains.</p>
+                    <p>* Evidence provides the basis for determining the relationship.</p>
+                </div>
+            {% else %}
+                <p class="text-gray-600">No related domains discovered.</p>
+            {% endif %}
+        </div>
+
         <!-- Vulnerabilities Section -->
         <div class="bg-white p-6 rounded-lg shadow mb-6">
             <h2 class="text-xl font-bold mb-4">Security Findings</h2>
@@ -89,89 +135,44 @@
             {% endif %}
         </div>
 
-        <!-- Add this section after the DNS Records section in your results.html -->
-<div class="bg-white p-6 rounded-lg shadow mb-6">
-    <h2 class="text-xl font-bold mb-4">Discovered Subdomains</h2>
-    {% if subdomains %}
-        <div class="overflow-x-auto">
-            <table class="min-w-full table-auto">
-                <thead>
-                    <tr class="bg-gray-50">
-                        <th class="px-4 py-2 text-left">Subdomain</th>
-                        <th class="px-4 py-2 text-left">IP Address</th>
-                        <th class="px-4 py-2 text-left">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for sub in subdomains %}
-                        <tr class="border-t">
-                            <td class="px-4 py-2 font-medium">{{ sub.subdomain }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ sub.ip }}</td>
-                            <td class="px-4 py-2">
-                                <span class="px-2 py-1 text-sm rounded
-                                    {% if sub.status == 'Active' %}
-                                        bg-green-100 text-green-800
-                                    {% else %}
-                                        bg-gray-100 text-gray-800
-                                    {% endif %}">
-                                    {{ sub.status }}
-                                </span>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- Subdomains Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Discovered Subdomains</h2>
+            {% if subdomains %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 text-left">Subdomain</th>
+                                <th class="px-4 py-2 text-left">IP Address</th>
+                                <th class="px-4 py-2 text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in subdomains %}
+                                <tr class="border-t">
+                                    <td class="px-4 py-2 font-medium">{{ sub.subdomain }}</td>
+                                    <td class="px-4 py-2 text-gray-600">{{ sub.ip }}</td>
+                                    <td class="px-4 py-2">
+                                        <span class="px-2 py-1 text-sm rounded
+                                            {% if sub.status == 'Active' %}
+                                                bg-green-100 text-green-800
+                                            {% else %}
+                                                bg-gray-100 text-gray-800
+                                            {% endif %}">
+                                            {{ sub.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600">No subdomains discovered.</p>
+            {% endif %}
         </div>
-    {% else %}
-        <p class="text-gray-600">No subdomains discovered.</p>
-    {% endif %}
-</div>
 
-<!-- Add this section after the Subdomains section in your results.html -->
-<div class="bg-white p-6 rounded-lg shadow mb-6">
-    <h2 class="text-xl font-bold mb-4">Potential Shadow Domains</h2>
-    {% if shadow_domains %}
-        <div class="overflow-x-auto">
-            <table class="min-w-full table-auto">
-                <thead>
-                    <tr class="bg-gray-50">
-                        <th class="px-4 py-2 text-left">Domain</th>
-                        <th class="px-4 py-2 text-left">IP Addresses</th>
-                        <th class="px-4 py-2 text-left">Similarity</th>
-                        <th class="px-4 py-2 text-left">Risk Level</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for domain in shadow_domains %}
-                        <tr class="border-t">
-                            <td class="px-4 py-2 font-medium">{{ domain.domain }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ domain.ips|join(', ') }}</td>
-                            <td class="px-4 py-2">{{ domain.similarity }}%</td>
-                            <td class="px-4 py-2">
-                                <span class="px-2 py-1 text-sm rounded
-                                    {% if domain.risk_level == 'High' %}
-                                        bg-red-100 text-red-800
-                                    {% elif domain.risk_level == 'Medium' %}
-                                        bg-yellow-100 text-yellow-800
-                                    {% else %}
-                                        bg-blue-100 text-blue-800
-                                    {% endif %}">
-                                    {{ domain.risk_level }}
-                                </span>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div class="mt-4 text-sm text-gray-600">
-            <p>* Similarity percentage indicates how closely the domain matches the original domain name.</p>
-            <p>* High risk domains (>80% similarity) should be monitored closely for potential phishing attempts.</p>
-        </div>
-    {% else %}
-        <p class="text-gray-600">No shadow domains detected.</p>
-    {% endif %}
-</div>
         <!-- Back Button -->
         <div class="mt-6">
             <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
