@@ -1,0 +1,183 @@
+{# templates/results.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Results</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Scan Results for {{ domain }}</h1>
+        
+        <!-- DNS Records Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">DNS Records</h2>
+            {% for record_type, records in dns_info.items() %}
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-700">{{ record_type }}</h3>
+                    <ul class="list-disc pl-5">
+                    {% for record in records %}
+                        <li class="text-gray-600">{{ record }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- SSL Certificate Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">SSL Certificate</h2>
+            {% if 'error' in ssl_info %}
+                <div class="text-red-500 bg-red-50 p-3 rounded">
+                    {{ ssl_info.error }}
+                </div>
+            {% else %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="font-bold mb-2">Issuer</h3>
+                        <div class="bg-gray-50 p-3 rounded text-gray-600">
+                            {{ ssl_info.issuer }}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold mb-2">Expires</h3>
+                        <div class="bg-gray-50 p-3 rounded text-gray-600">
+                            {{ ssl_info.expires }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Vulnerabilities Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Security Findings</h2>
+            {% if vulnerabilities %}
+                {% for vuln in vulnerabilities %}
+                    <div class="mb-4 p-4 rounded
+                        {% if vuln.severity == 'High' %}
+                            bg-red-50 border-l-4 border-red-500
+                        {% elif vuln.severity == 'Medium' %}
+                            bg-yellow-50 border-l-4 border-yellow-500
+                        {% elif vuln.severity == 'Low' %}
+                            bg-blue-50 border-l-4 border-blue-500
+                        {% else %}
+                            bg-gray-50 border-l-4 border-gray-500
+                        {% endif %}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
+                            <span class="px-2 py-1 text-sm rounded
+                                {% if vuln.severity == 'High' %}
+                                    bg-red-100 text-red-800
+                                {% elif vuln.severity == 'Medium' %}
+                                    bg-yellow-100 text-yellow-800
+                                {% elif vuln.severity == 'Low' %}
+                                    bg-blue-100 text-blue-800
+                                {% else %}
+                                    bg-gray-100 text-gray-800
+                                {% endif %}">
+                                {{ vuln.severity }}
+                            </span>
+                        </div>
+                        <p class="mt-2 text-gray-600">{{ vuln.description }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-gray-600 bg-gray-50 p-4 rounded">
+                    No vulnerabilities detected.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Add this section after the DNS Records section in your results.html -->
+<div class="bg-white p-6 rounded-lg shadow mb-6">
+    <h2 class="text-xl font-bold mb-4">Discovered Subdomains</h2>
+    {% if subdomains %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-4 py-2 text-left">Subdomain</th>
+                        <th class="px-4 py-2 text-left">IP Address</th>
+                        <th class="px-4 py-2 text-left">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in subdomains %}
+                        <tr class="border-t">
+                            <td class="px-4 py-2 font-medium">{{ sub.subdomain }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ sub.ip }}</td>
+                            <td class="px-4 py-2">
+                                <span class="px-2 py-1 text-sm rounded
+                                    {% if sub.status == 'Active' %}
+                                        bg-green-100 text-green-800
+                                    {% else %}
+                                        bg-gray-100 text-gray-800
+                                    {% endif %}">
+                                    {{ sub.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-gray-600">No subdomains discovered.</p>
+    {% endif %}
+</div>
+
+<!-- Add this section after the Subdomains section in your results.html -->
+<div class="bg-white p-6 rounded-lg shadow mb-6">
+    <h2 class="text-xl font-bold mb-4">Potential Shadow Domains</h2>
+    {% if shadow_domains %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-50">
+                        <th class="px-4 py-2 text-left">Domain</th>
+                        <th class="px-4 py-2 text-left">IP Addresses</th>
+                        <th class="px-4 py-2 text-left">Similarity</th>
+                        <th class="px-4 py-2 text-left">Risk Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for domain in shadow_domains %}
+                        <tr class="border-t">
+                            <td class="px-4 py-2 font-medium">{{ domain.domain }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ domain.ips|join(', ') }}</td>
+                            <td class="px-4 py-2">{{ domain.similarity }}%</td>
+                            <td class="px-4 py-2">
+                                <span class="px-2 py-1 text-sm rounded
+                                    {% if domain.risk_level == 'High' %}
+                                        bg-red-100 text-red-800
+                                    {% elif domain.risk_level == 'Medium' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-blue-100 text-blue-800
+                                    {% endif %}">
+                                    {{ domain.risk_level }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-4 text-sm text-gray-600">
+            <p>* Similarity percentage indicates how closely the domain matches the original domain name.</p>
+            <p>* High risk domains (>80% similarity) should be monitored closely for potential phishing attempts.</p>
+        </div>
+    {% else %}
+        <p class="text-gray-600">No shadow domains detected.</p>
+    {% endif %}
+</div>
+        <!-- Back Button -->
+        <div class="mt-6">
+            <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
+                ← Back to Scanner
+            </a>
+        </div>
+    </div>
+</body>
+</html>
