@@ -8,10 +8,10 @@ import requests
 import socket
 import ssl
 import concurrent.futures
-import tldextract
 import re
 from urllib.parse import urlparse
-import os
+import nmap3
+import json
 
 app = Flask(__name__)
 
@@ -108,21 +108,24 @@ def check_vulnerabilities_alternative(domain):
             })
 
     def check_open_ports(domain):
-        common_ports = [21, 22, 23, 25, 80, 443, 445, 3306, 3389, 8080]
-        for port in common_ports:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(1)
-                result = sock.connect_ex((domain, port))
-                if result == 0:
+        # NOG NIET KLAAR --- KIJK IN LOOP-NMAPVOORPORTSCANNING VOOR VERDERE UITLEG WAAROM.
+        nmap = nmap3.NmapScanTechniques()
+        try:
+            result = nmap.scan_top_ports(domain)
+        except Exception as e:
+            print(f"/nfout tijdens het scannen: {e}")
+        if not result:
+            print("Er zijn geen poorten gevonden, of er zit een fout in de nmap code.")
+            vulnerabilities.append({"Error": "Geen open poorten gevonden, of er is een fout in de nmap code."})
+        else:
+            for ip_address, details in result.items():
+                for port in details['ports']:
                     vulnerabilities.append({
-                        'title': f'Open Port: {port}',
-                        'description': f'Port {port} is open and might be vulnerable if not properly secured',
-                        'severity': 'Medium' if port not in [80, 443] else 'Info'
+                        'title': f'Open port {port["portid"]}',
+                        'protocol': f'{port["protocol"]}',
+                        'description': f'Port {port["portid"]} is open and might be vulnerable if not properly secured',
+                        'severity': 'Medium' if port["portid"] not in [80, 443] else 'Info'
                     })
-                sock.close()
-            except:
-                continue
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         executor.submit(check_headers, domain)
