@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify
 import dns.resolver
 import sqlite3
 import csv
-import json
 from datetime import datetime
 import requests
 import socket
