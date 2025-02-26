@@ -334,7 +334,7 @@ class BraveSearchOptimizer:
             print(f"Error parsing rate limit headers: {e}")
             return None
 
-    def search_brave(self, query, max_retries=3):
+    def search_brave(self, query, max_retries=1):
         """Optimized Brave Search with rate limit handling"""
         print(f"\nSearching Brave for: {query}")
         
@@ -352,7 +352,7 @@ class BraveSearchOptimizer:
             print("Using cached results")
             return cached_results
 
-        retries = 0
+        retries = 2
         while retries < max_retries:
             # Respect rate limits
             self.wait_for_rate_limit()
@@ -470,7 +470,7 @@ def find_related_domains(domain, brave_api_key=None):
             return False
         return True
 
-    def enhanced_brave_search(api_key, query, max_retries=3):
+    def enhanced_brave_search(api_key, query, max_retries=1):
         if not validate_brave_api_key(api_key):
             return None
             
@@ -501,7 +501,7 @@ def find_related_domains(domain, brave_api_key=None):
                     return None
                 elif response.status_code == 429:
                     print(response.json())
-                    wait_time = int(response.headers.get('Retry-After', 60))
+                    wait_time = int(response.headers.get('Retry-After', 1))
                     print(f"Rate limited. Waiting {wait_time} seconds...")
                     time.sleep(wait_time)
                 else:
