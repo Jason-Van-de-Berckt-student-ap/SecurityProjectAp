@@ -199,235 +199,235 @@ def find_subdomains(domain):
 
     return results
 
-class BraveSearchOptimizer:
-    def __init__(self, api_key, monthly_limit=2000):
-        self.api_key = api_key
-        self.monthly_limit = monthly_limit
-        self.last_request_time = None
-        self.min_request_interval = 1.1  # Minimum 1.1 seconds between requests
-        self.setup_database()
+# class BraveSearchOptimizer:
+#     def __init__(self, api_key, monthly_limit=2000):
+#         self.api_key = api_key
+#         self.monthly_limit = monthly_limit
+#         self.last_request_time = None
+#         self.min_request_interval = 1.1  # Minimum 1.1 seconds between requests
+#         self.setup_database()
     
-    def setup_database(self):
-        """Setup SQLite database for caching and tracking API usage"""
-        conn = sqlite3.connect('brave_search.db')
-        c = conn.cursor()
+#     def setup_database(self):
+#         """Setup SQLite database for caching and tracking API usage"""
+#         conn = sqlite3.connect('brave_search.db')
+#         c = conn.cursor()
         
-        # Create table for API call tracking
-        c.execute('''CREATE TABLE IF NOT EXISTS api_calls
-                    (id INTEGER PRIMARY KEY,
-                     call_date DATE,
-                     count INTEGER)''')
+#         # Create table for API call tracking
+#         c.execute('''CREATE TABLE IF NOT EXISTS api_calls
+#                     (id INTEGER PRIMARY KEY,
+#                      call_date DATE,
+#                      count INTEGER)''')
         
-        # Create table for caching search results
-        c.execute('''CREATE TABLE IF NOT EXISTS search_cache
-                    (query TEXT PRIMARY KEY,
-                     results TEXT,
-                     timestamp DATETIME)''')
+#         # Create table for caching search results
+#         c.execute('''CREATE TABLE IF NOT EXISTS search_cache
+#                     (query TEXT PRIMARY KEY,
+#                      results TEXT,
+#                      timestamp DATETIME)''')
         
-        conn.commit()
-        conn.close()
+#         conn.commit()
+#         conn.close()
 
-    def get_monthly_calls(self):
-        """Get the number of API calls made this month"""
-        conn = sqlite3.connect('brave_search.db')
-        c = conn.cursor()
+#     def get_monthly_calls(self):
+#         """Get the number of API calls made this month"""
+#         conn = sqlite3.connect('brave_search.db')
+#         c = conn.cursor()
         
-        month_start = datetime.now().replace(day=1).date()
+#         month_start = datetime.now().replace(day=1).date()
         
-        try:
-            c.execute('SELECT SUM(count) FROM api_calls WHERE date(call_date) >= date(?)',
-                     (month_start.isoformat(),))
-            count = c.fetchone()[0]
-        except Exception as e:
-            print(f"Error getting monthly calls: {str(e)}")
-            count = 0
-        finally:
-            conn.close()
+#         try:
+#             c.execute('SELECT SUM(count) FROM api_calls WHERE date(call_date) >= date(?)',
+#                      (month_start.isoformat(),))
+#             count = c.fetchone()[0]
+#         except Exception as e:
+#             print(f"Error getting monthly calls: {str(e)}")
+#             count = 0
+#         finally:
+#             conn.close()
             
-        return count or 0
+#         return count or 0
 
-    def record_api_call(self):
-        """Record an API call"""
-        conn = sqlite3.connect('brave_search.db')
-        c = conn.cursor()
+#     def record_api_call(self):
+#         """Record an API call"""
+#         conn = sqlite3.connect('brave_search.db')
+#         c = conn.cursor()
         
-        today = datetime.now().date()
-        try:
-            c.execute('''INSERT OR REPLACE INTO api_calls 
-                        (call_date, count) 
-                        VALUES (?, 
-                        COALESCE((SELECT count + 1 FROM api_calls WHERE call_date = ?), 1))''',
-                     (today, today))
-            conn.commit()
-        except Exception as e:
-            print(f"Error recording API call: {str(e)}")
-        finally:
-            conn.close()
+#         today = datetime.now().date()
+#         try:
+#             c.execute('''INSERT OR REPLACE INTO api_calls 
+#                         (call_date, count) 
+#                         VALUES (?, 
+#                         COALESCE((SELECT count + 1 FROM api_calls WHERE call_date = ?), 1))''',
+#                      (today, today))
+#             conn.commit()
+#         except Exception as e:
+#             print(f"Error recording API call: {str(e)}")
+#         finally:
+#             conn.close()
 
-    def get_cached_results(self, query):
-        """Get cached results if they exist and are not expired"""
-        conn = sqlite3.connect('brave_search.db')
-        c = conn.cursor()
+#     def get_cached_results(self, query):
+#         """Get cached results if they exist and are not expired"""
+#         conn = sqlite3.connect('brave_search.db')
+#         c = conn.cursor()
         
-        # Cache expires after 7 days
-        cache_expiry = datetime.now() - timedelta(days=7)
+#         # Cache expires after 7 days
+#         cache_expiry = datetime.now() - timedelta(days=7)
         
-        try:
-            c.execute('''SELECT results FROM search_cache 
-                        WHERE query = ? AND timestamp > ?''',
-                     (query, cache_expiry))
-            result = c.fetchone()
+#         try:
+#             c.execute('''SELECT results FROM search_cache 
+#                         WHERE query = ? AND timestamp > ?''',
+#                      (query, cache_expiry))
+#             result = c.fetchone()
             
-            if result:
-                return json.loads(result[0])
-        except Exception as e:
-            print(f"Error getting cached results: {str(e)}")
-        finally:
-            conn.close()
+#             if result:
+#                 return json.loads(result[0])
+#         except Exception as e:
+#             print(f"Error getting cached results: {str(e)}")
+#         finally:
+#             conn.close()
             
-        return None
+#         return None
 
-    def cache_results(self, query, results):
-        """Cache search results"""
-        conn = sqlite3.connect('brave_search.db')
-        c = conn.cursor()
+#     def cache_results(self, query, results):
+#         """Cache search results"""
+#         conn = sqlite3.connect('brave_search.db')
+#         c = conn.cursor()
         
-        try:
-            c.execute('''INSERT OR REPLACE INTO search_cache 
-                        (query, results, timestamp) 
-                        VALUES (?, ?, ?)''',
-                     (query, json.dumps(results), datetime.now().isoformat()))
-            conn.commit()
-        except Exception as e:
-            print(f"Error caching results: {str(e)}")
-        finally:
-            conn.close()
+#         try:
+#             c.execute('''INSERT OR REPLACE INTO search_cache 
+#                         (query, results, timestamp) 
+#                         VALUES (?, ?, ?)''',
+#                      (query, json.dumps(results), datetime.now().isoformat()))
+#             conn.commit()
+#         except Exception as e:
+#             print(f"Error caching results: {str(e)}")
+#         finally:
+#             conn.close()
 
-    def wait_for_rate_limit(self, reset_time=None):
-        """Handle rate limiting with exponential backoff"""
-        if reset_time:
-            # If we have a reset time from the headers, wait until then
-            wait_time = int(reset_time)
-            print(f"Rate limit hit. Waiting {wait_time} seconds before retrying...")
-            time.sleep(wait_time)
-        else:
-            # If no reset time provided, use exponential backoff
-            if self.last_request_time:
-                # Ensure minimum time between requests
-                elapsed = time.time() - self.last_request_time
-                if elapsed < self.min_request_interval:
-                    time.sleep(self.min_request_interval - elapsed)
+#     def wait_for_rate_limit(self, reset_time=None):
+#         """Handle rate limiting with exponential backoff"""
+#         if reset_time:
+#             # If we have a reset time from the headers, wait until then
+#             wait_time = int(reset_time)
+#             print(f"Rate limit hit. Waiting {wait_time} seconds before retrying...")
+#             time.sleep(wait_time)
+#         else:
+#             # If no reset time provided, use exponential backoff
+#             if self.last_request_time:
+#                 # Ensure minimum time between requests
+#                 elapsed = time.time() - self.last_request_time
+#                 if elapsed < self.min_request_interval:
+#                     time.sleep(self.min_request_interval - elapsed)
 
-    def parse_rate_limit_headers(self, headers):
-        """Parse rate limit information from response headers"""
-        try:
-            remaining = headers.get('x-ratelimit-remaining', '').split(',')[0].strip()
-            reset = headers.get('x-ratelimit-reset', '').split(',')[0].strip()
-            limit = headers.get('x-ratelimit-limit', '').split(',')[0].strip()
+#     def parse_rate_limit_headers(self, headers):
+#         """Parse rate limit information from response headers"""
+#         try:
+#             remaining = headers.get('x-ratelimit-remaining', '').split(',')[0].strip()
+#             reset = headers.get('x-ratelimit-reset', '').split(',')[0].strip()
+#             limit = headers.get('x-ratelimit-limit', '').split(',')[0].strip()
             
-            return {
-                'remaining': int(remaining) if remaining else None,
-                'reset': int(reset) if reset else None,
-                'limit': int(limit) if limit else None
-            }
-        except Exception as e:
-            print(f"Error parsing rate limit headers: {e}")
-            return None
+#             return {
+#                 'remaining': int(remaining) if remaining else None,
+#                 'reset': int(reset) if reset else None,
+#                 'limit': int(limit) if limit else None
+#             }
+#         except Exception as e:
+#             print(f"Error parsing rate limit headers: {e}")
+#             return None
 
-    def search_brave(self, query, max_retries=1):
-        """Optimized Brave Search with rate limit handling"""
-        print(f"\nSearching Brave for: {query}")
+#     def search_brave(self, query, max_retries=1):
+#         """Optimized Brave Search with rate limit handling"""
+#         print(f"\nSearching Brave for: {query}")
         
-        # Check monthly limit
-        monthly_calls = self.get_monthly_calls()
-        print(f"Monthly calls used: {monthly_calls}/{self.monthly_limit}")
+#         # Check monthly limit
+#         monthly_calls = self.get_monthly_calls()
+#         print(f"Monthly calls used: {monthly_calls}/{self.monthly_limit}")
         
-        if monthly_calls >= self.monthly_limit:
-            print("Monthly API limit reached!")
-            return None
+#         if monthly_calls >= self.monthly_limit:
+#             print("Monthly API limit reached!")
+#             return None
         
-        # Check cache first
-        cached_results = self.get_cached_results(query)
-        if cached_results:
-            print("Using cached results")
-            return cached_results
+#         # Check cache first
+#         cached_results = self.get_cached_results(query)
+#         if cached_results:
+#             print("Using cached results")
+#             return cached_results
 
-        retries = 2
-        while retries < max_retries:
-            # Respect rate limits
-            self.wait_for_rate_limit()
+#         retries = 2
+#         while retries < max_retries:
+#             # Respect rate limits
+#             self.wait_for_rate_limit()
             
-            # Perform API call
-            url = "https://api.search.brave.com/res/v1/web/search"
-            headers = {
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip",
-                "X-Subscription-Token": self.api_key
-            }
-            params = {
-                "q": query,
-                "count": 50,
-                "text_decorations": False,
-                "search_lang": "en"
-            }
+#             # Perform API call
+#             url = "https://api.search.brave.com/res/v1/web/search"
+#             headers = {
+#                 "Accept": "application/json",
+#                 "Accept-Encoding": "gzip",
+#                 "X-Subscription-Token": self.api_key
+#             }
+#             params = {
+#                 "q": query,
+#                 "count": 50,
+#                 "text_decorations": False,
+#                 "search_lang": "en"
+#             }
             
-            try:
-                print(f"Making API request (attempt {retries + 1}/{max_retries})...")
-                response = requests.get(url, headers=headers, params=params, timeout=30)
-                self.last_request_time = time.time()
+#             try:
+#                 print(f"Making API request (attempt {retries + 1}/{max_retries})...")
+#                 response = requests.get(url, headers=headers, params=params, timeout=30)
+#                 self.last_request_time = time.time()
                 
-                print(f"Response status: {response.status_code}")
+#                 print(f"Response status: {response.status_code}")
                 
-                if response.status_code == 200:
-                    results = response.json()
-                    print("Successfully got results")
+#                 if response.status_code == 200:
+#                     results = response.json()
+#                     print("Successfully got results")
                     
-                    # Record API call
-                    self.record_api_call()
+#                     # Record API call
+#                     self.record_api_call()
                     
-                    # Cache results
-                    self.cache_results(query, results)
+#                     # Cache results
+#                     self.cache_results(query, results)
                     
-                    if 'web' in results and 'results' in results['web']:
-                        print(f"Found {len(results['web']['results'])} results")
+#                     if 'web' in results and 'results' in results['web']:
+#                         print(f"Found {len(results['web']['results'])} results")
                     
-                    return results
+#                     return results
                     
-                elif response.status_code == 429:
-                    rate_limits = self.parse_rate_limit_headers(response.headers)
-                    if rate_limits and rate_limits['reset']:
-                        print(f"Rate limit exceeded. Will reset in {rate_limits['reset']} seconds")
-                        if retries < max_retries - 1:  # Don't wait if this is the last retry
-                            self.wait_for_rate_limit(rate_limits['reset'])
-                    else:
-                        # If we can't get reset time, use exponential backoff
-                        wait_time = (2 ** retries) * 5  # 5, 10, 20 seconds
-                        print(f"Rate limit exceeded. Waiting {wait_time} seconds...")
-                        time.sleep(wait_time)
+#                 elif response.status_code == 429:
+#                     rate_limits = self.parse_rate_limit_headers(response.headers)
+#                     if rate_limits and rate_limits['reset']:
+#                         print(f"Rate limit exceeded. Will reset in {rate_limits['reset']} seconds")
+#                         if retries < max_retries - 1:  # Don't wait if this is the last retry
+#                             self.wait_for_rate_limit(rate_limits['reset'])
+#                     else:
+#                         # If we can't get reset time, use exponential backoff
+#                         wait_time = (2 ** retries) * 5  # 5, 10, 20 seconds
+#                         print(f"Rate limit exceeded. Waiting {wait_time} seconds...")
+#                         time.sleep(wait_time)
                     
-                elif response.status_code == 422:
-                    print("API validation error. Check parameters.")
-                    return None
-                else:
-                    print(f"API Error. Response: {response.text}")
+#                 elif response.status_code == 422:
+#                     print("API validation error. Check parameters.")
+#                     return None
+#                 else:
+#                     print(f"API Error. Response: {response.text}")
                 
-                retries += 1
+#                 retries += 1
                 
-            except requests.exceptions.Timeout:
-                print("Request timed out. The server took too long to respond.")
-            except requests.exceptions.ConnectionError:
-                print("Connection error. Check your internet connection.")
-            except Exception as e:
-                print(f"Exception during API call: {str(e)}")
+#             except requests.exceptions.Timeout:
+#                 print("Request timed out. The server took too long to respond.")
+#             except requests.exceptions.ConnectionError:
+#                 print("Connection error. Check your internet connection.")
+#             except Exception as e:
+#                 print(f"Exception during API call: {str(e)}")
             
-            retries += 2
-            if retries < max_retries:
-                wait_time = (2 ** retries) * 5
-                print(f"Retrying in {wait_time} seconds...")
-                time.sleep(wait_time)
+#             retries += 2
+#             if retries < max_retries:
+#                 wait_time = (2 ** retries) * 5
+#                 print(f"Retrying in {wait_time} seconds...")
+#                 time.sleep(wait_time)
         
-        print("Max retries reached. Could not complete search.")
-        return None
+#         print("Max retries reached. Could not complete search.")
+#         return None
 
 # Shadow domain detection function
 def find_related_domains(domain, brave_api_key=None):
@@ -453,7 +453,7 @@ def find_related_domains(domain, brave_api_key=None):
         ])
         
         # Common corporate patterns
-        if len(base_domain) > 4:  # Avoid too short names
+        if len(base_domain) > 1:  # Avoid too short names
             patterns.extend([
                 f"{base_domain[:3]}",  # First 3 chars
                 f"{base_domain}-corp",
@@ -464,7 +464,7 @@ def find_related_domains(domain, brave_api_key=None):
         return patterns
 
     def validate_brave_api_key(api_key):
-        if not api_key or len(api_key) < 32:  # Basic validation
+        if not api_key or len(api_key) < 30:  # Basic validation
             print("Invalid or missing Brave API key")
             return False
         return True
@@ -473,7 +473,7 @@ def find_related_domains(domain, brave_api_key=None):
         if not validate_brave_api_key(api_key):
             return None
             
-        url = "https://api.search.brave.com/res/v1/web/search"
+        url = "https://api.search.brave.com/res/v1/web/search?q=brave+search"
         headers = {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
@@ -487,7 +487,7 @@ def find_related_domains(domain, brave_api_key=None):
                     headers=headers,
                     params={
                         "q": query,
-                        "count": 50,
+                        "count": 20,
                         "search_lang": "en"
                     },
                     timeout=10
@@ -585,6 +585,7 @@ def find_related_domains(domain, brave_api_key=None):
         if brave_api_key:
             # Search for each pattern
             for pattern in patterns:
+                print(f"Searching for pattern: {pattern}")
                 results = enhanced_brave_search(brave_api_key, f'site:"{pattern}"')
                 if results and 'web' in results:
                     for result in results['web'].get('results', []):
@@ -602,6 +603,7 @@ def find_related_domains(domain, brave_api_key=None):
                                     'confidence': 'Medium',
                                     'evidence': f'Matched pattern: {pattern}'
                                 })
+                time.sleep(1)
         
         # 5. Remove duplicates while preserving highest confidence
         seen_domains = {}
