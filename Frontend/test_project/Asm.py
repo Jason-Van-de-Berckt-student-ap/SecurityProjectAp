@@ -420,7 +420,7 @@ class BraveSearchOptimizer:
             except Exception as e:
                 print(f"Exception during API call: {str(e)}")
             
-            retries += 1
+            retries += 2
             if retries < max_retries:
                 wait_time = (2 ** retries) * 5
                 print(f"Retrying in {wait_time} seconds...")
@@ -462,10 +462,9 @@ def find_related_domains(domain, brave_api_key=None):
             ])
         
         return patterns
-    
+
     def validate_brave_api_key(api_key):
-        if not api_key or len(api_key) < 31:  # Basic validation
-            print(api_key, len(api_key))
+        if not api_key or len(api_key) < 32:  # Basic validation
             print("Invalid or missing Brave API key")
             return False
         return True
@@ -501,7 +500,7 @@ def find_related_domains(domain, brave_api_key=None):
                     return None
                 elif response.status_code == 429:
                     print(response.json())
-                    wait_time = int(response.headers.get('Retry-After', 1))
+                    wait_time = int(response.headers.get('Retry-After', 60))
                     print(f"Rate limited. Waiting {wait_time} seconds...")
                     time.sleep(wait_time)
                 else:
@@ -526,7 +525,6 @@ def find_related_domains(domain, brave_api_key=None):
                     # Check Subject Alternative Names
                     for type_, san in cert.get('subjectAltName', []):
                         if type_ == 'DNS':
-                            print(san.lower())
                             domains.add(san.lower())
                             
                     return list(domains)
@@ -625,7 +623,6 @@ def find_related_domains(domain, brave_api_key=None):
     except Exception as e:
         print(f"Error in find_related_domains: {str(e)}")
         return []
-
 
 # Updated export_to_csv function
 def export_to_csv(scan_results, domain):
