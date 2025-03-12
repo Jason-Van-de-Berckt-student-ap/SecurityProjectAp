@@ -87,13 +87,68 @@
 
 import requests
 from bs4 import BeautifulSoup
-import json
 import re
+from jinja2 import Environment, FileSystemLoader
+
+# Vulnerability database
+VULNERABILITY_DB = {
+    "jQuery": {
+        "min_version": "3.6.0",
+        "severity": "High",
+        "description": "Outdated jQuery version found. Vulnerable to XSS attacks."
+    },
+    "WordPress": {
+        "min_version": "6.4.3", 
+        "severity": "High",
+        "description": "Outdated WordPress version. Security updates required."
+    },
+    "React": {
+        "min_version": "18.2.0",
+        "severity": "Medium",
+        "description": "Older React version. Potential performance issues."
+    }
+}
 
 def extract_version(text):
-    # Verbeterde regex voor versieherkenning (ondersteunt semver, datums, en complexe versies)
-    version_match = re.search(r'(v?[\d\.]+(-\w+)?(\.\d+)*)|(\d{4}-\d{2}-\d{2})', text)
-    return version_match.group(0) if version_match else "Version unknown"
+    version_match = re.search(
+        r'(v?\d+\.\d+\.\d+(-\w+)?)|(\d{4}-\d{2}-\d{2})|(\d+\.\d+(\.\d+)*)',
+        text
+    )
+    return version_match.group(0) if version_match else "unknown"
+
+def analyze_vulnerabilities(tech_data):
+    vulnerabilities = []
+    
+    # Check web frameworks
+    for framework, version in tech_data["web_frameworks"].items():
+        if framework in VULNERABILITY_DB:
+            db_entry = VULNERABILITY_DB[framework]
+            if version < db_entry["min_version"]:
+                vulnerabilities.append({
+                    "title": f"Outdated {framework} Version",
+                    "description": f"{db_entry['description']} Detected: {version}, Required: {db_entry['min_version']}+",
+                    "severity": db_entry["severity"]
+                })
+    
+    # Check services
+    for service, version in tech_data["services"].items():
+        if "Shopify" in service and version == "Detected":
+            vulnerabilities.append({
+                "title": "Shopify Detected",
+                "description": "E-commerce platform requires regular security audits",
+                "severity": "Medium"
+            })
+    
+    return vulnerabilities
+
+def generate_html_report(vulnerabilities, url):
+    env = Environment(loader=FileSystemLoader('.'))
+    template = env.get_template('vulnerability_template.html')
+    
+    return template.render(
+        vulnerabilities=vulnerabilities,
+        target_url=url
+    )
 
 def get_website_technologies(url):
     technologies = {
@@ -105,13 +160,12 @@ def get_website_technologies(url):
     }
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=15)
         response.raise_for_status()
 
-        # Headers analyseren
         headers = response.headers
-        if 'Server' in headers:
-            server_header = headers['Server']
+        server_header = headers.get('Server', '')
+        if server_header:
             technologies["web_servers"].append(server_header)
             technologies["operating_system"] = (
                 "Linux" if 'Linux' in server_header else
@@ -119,53 +173,34 @@ def get_website_technologies(url):
                 "macOS" if 'Darwin' in server_header else "Unknown"
             )
 
-        # Versie-informatie uit headers halen
-        version_headers = ['X-Powered-By', 'X-Generator', 'X-Content-Type']
-        for header in version_headers:
+        for header in ['X-Powered-By', 'X-Generator']:
             if header in headers:
                 technologies["versions"][header] = extract_version(headers[header])
 
-        # HTML analyseren
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Web Frameworks detecteren met versies
         framework_patterns = {
             r'([\w/-]+)\.react(-dom)?(\.min)?\.js': 'React',
             r'vue(@[\d\.]+)?(\.min)?\.js': 'Vue.js',
             r'angular[^/]*\.js': 'Angular',
-            r'jquery([-.])(\d+\.\d+\.\d+)': 'jQuery',
-            r'bootstrap(/js/)?([\d\.]+)/': 'Bootstrap',
-            r'ember(.prod)?\.js': 'Ember.js'
+            r'jquery-(\d+\.\d+\.\d+)': 'jQuery',
+            r'bootstrap/dist/js/bootstrap\.(min\.)?js': 'Bootstrap',
+            r'next/dist/': 'Next.js'
         }
 
-        for script in soup.find_all('script'):
-            src = script.get('src', '')
-            content = str(script)
-            
+        for script in soup.find_all(['script', 'link']):
+            src = script.get('src', '') or script.get('href', '')
             for pattern, framework in framework_patterns.items():
-                if re.search(pattern, src, re.IGNORECASE) or re.search(pattern, content, re.IGNORECASE):
-                    version = extract_version(src) if src else extract_version(content)
-                    technologies["web_frameworks"][framework] = version
+                if re.search(pattern, src, re.IGNORECASE):
+                    technologies["web_frameworks"][framework] = extract_version(src)
 
-        # Populaire Services detecteren
         service_patterns = {
-            # Analytics
-            r'google-analytics\.com/analytics\.js': ('Google Analytics', 'src'),
             r'googletagmanager\.com/gtm\.js': ('Google Tag Manager', 'src'),
-            # Social Media
-            r'connect\.facebook\.net/[a-z]/sdk\.js': ('Facebook SDK', 'src'),
-            r'platform\.twitter\.com/widgets\.js': ('Twitter SDK', 'src'),
-            # Payment
+            r'hotjar\.com/h.js': ('Hotjar', 'src'),
             r'js\.stripe\.com/v3': ('Stripe', 'src'),
-            r'www\.paypalobjects\.com/api/checkout\.js': ('PayPal', 'src'),
-            # CMS
+            r'checkout\.razorpay.com': ('Razorpay', 'src'),
             r'/wp-content/': ('WordPress', 'content'),
-            r'cdn\.shopify\.com/s/': ('Shopify', 'src'),
-            # Hosting
-            r'cloudflare\.com/ajax/libs/': ('Cloudflare', 'src'),
-            # Marketing
-            r'hs-scripts\.com': ('HubSpot', 'src'),
-            r'piwik\.js': ('Matomo', 'src')
+            r'cdn.shopify.com/s/': ('Shopify', 'src')
         }
 
         for pattern, (service, loc) in service_patterns.items():
@@ -176,37 +211,37 @@ def get_website_technologies(url):
                 if re.search(pattern, response.text, re.IGNORECASE):
                     technologies["services"][service] = "Detected"
 
-        # Specifieke meta-tags checken
-        meta_checks = {
-            'generator': ['WordPress', 'Drupal', 'Joomla'],
-            'framework': ['React', 'Vue.js', 'Angular']
-        }
-
         for meta in soup.find_all('meta'):
             name = meta.get('name', '').lower()
             content = meta.get('content', '')
             
             if name == 'generator':
-                for cms in meta_checks['generator']:
-                    if cms in content:
-                        technologies["web_frameworks"][cms] = extract_version(content)
-            
-            if name == 'framework':
-                for framework in meta_checks['framework']:
-                    if framework in content:
-                        technologies["web_frameworks"][framework] = extract_version(content)
+                if 'WordPress' in content:
+                    version = re.search(r'WordPress (\d+\.\d+\.\d+)', content)
+                    technologies["web_frameworks"]["WordPress"] = version.group(1) if version else "Detected"
+                
+                if 'Shopify' in content:
+                    technologies["services"]["Shopify"] = "Detected"
 
-    except requests.RequestException as e:
-        print(f"Fout: {e}")
+    except Exception as e:
+        print(f"Scan error: {str(e)}")
 
     return technologies
 
-def save_to_json(data, filename='technologies.json'):
-    with open(filename, 'w') as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
-
 if __name__ == "__main__":
-    url = input("Voer URL in: ")
-    data = get_website_technologies(url)
-    save_to_json(data)
-    print("Data opgeslagen.")
+    url = input("Enter website URL: ").strip()
+    if not url.startswith(('http://', 'https://')):
+        url = f'https://{url}'
+    
+    try:
+        tech_data = get_website_technologies(url)
+        vulnerabilities = analyze_vulnerabilities(tech_data)
+        report_html = generate_html_report(vulnerabilities, url)
+        
+        with open('security_report.html', 'w') as f:
+            f.write(report_html)
+            
+        print("Security report generated: security_report.html")
+        
+    except Exception as e:
+        print(f"Error generating report: {str(e)}")
