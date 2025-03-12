@@ -53,7 +53,7 @@
                 </div>
                 
                 <form action="/process_batch_validation" method="post">
-                    <input type="hidden" name="domains_json" value="{{ valid_domains|tojson }}">
+                    <input type="hidden" name="domains_json" value="{{ valid_domains|tojson|safe }}">
                     
                     <!-- Scan Options -->
                     <div class="mb-4">
