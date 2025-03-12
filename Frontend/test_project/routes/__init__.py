@@ -7,7 +7,7 @@ from flask import Blueprint
 # Import all blueprints
 from routes.single_scan import single_scan_bp
 from routes.batch_scan import batch_scan_bp
-from routes.tech_detection import tech_detection_bp
+from Frontend.test_project.routes.tech_detection_depreciated import tech_detection_bp
 
 # List of all blueprints for easy registration
 all_blueprints = [
