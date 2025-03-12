@@ -324,11 +324,12 @@ def check_vulnerabilities_alternative(domain):
                     continue
                     
                 for port in details['ports']:
-                    vulnerabilities.append({
-                        'title': f'Open port {port["portid"]}',
-                        'description': f'Port {port["portid"]} is open and might be vulnerable if not properly secured',
-                        'severity': 'Medium' if port["portid"] not in [80, 443] else 'Info'
-                    })
+                    if port.state == "open":
+                        vulnerabilities.append({
+                            'title': f'Open port {port["portid"]}',
+                            'description': f'Port {port["portid"]} is open and might be vulnerable if not properly secured',
+                            'severity': 'Medium' if port["portid"] not in [80, 443] else 'Info'
+                        })
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         executor.submit(check_headers, domain)
