@@ -565,7 +565,6 @@ def extract_version(text, technology_name=None):
     for pattern in patterns:
         match = re.search(pattern, text)
         if match:
-            # print(match.group(1))
             return match.group(1)
     
     return "unknown"
