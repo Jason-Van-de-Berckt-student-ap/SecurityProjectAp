@@ -140,16 +140,7 @@ def analyze_vulnerabilities(tech_data):
             })
     
     return vulnerabilities
-
-def generate_html_report(vulnerabilities, url):
-    env = Environment(loader=FileSystemLoader('.'))
-    template = env.get_template('vulnerability_template.html')
     
-    return template.render(
-        vulnerabilities=vulnerabilities,
-        target_url=url
-    )
-
 def get_website_technologies(url):
     technologies = {
         "web_frameworks": {},
@@ -228,20 +219,11 @@ def get_website_technologies(url):
 
     return technologies
 
-if __name__ == "__main__":
-    url = input("Enter website URL: ").strip()
-    if not url.startswith(('http://', 'https://')):
-        url = f'https://{url}'
-    
+def check_vulnerabilities_alternative(domain):
     try:
-        tech_data = get_website_technologies(url)
+        tech_data = get_website_technologies(domain)
         vulnerabilities = analyze_vulnerabilities(tech_data)
-        report_html = generate_html_report(vulnerabilities, url)
-        
-        with open('security_report.html', 'w') as f:
-            f.write(report_html)
+        return vulnerabilities
             
-        print("Security report generated: security_report.html")
-        
     except Exception as e:
         print(f"Error generating report: {str(e)}")
