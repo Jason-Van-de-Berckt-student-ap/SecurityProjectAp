@@ -13,7 +13,7 @@ import re, time
 from urllib.parse import urlparse
 import os
 from difflib import SequenceMatcher
-from config import BRAVE_API_KEY
+from Frontend.test_project.config import BRAVE_API_KEY
 import nmap3
 
 
@@ -199,243 +199,42 @@ def find_subdomains(domain):
 
     return results
 
-# class BraveSearchOptimizer:
-#     def __init__(self, api_key, monthly_limit=2000):
-#         self.api_key = api_key
-#         self.monthly_limit = monthly_limit
-#         self.last_request_time = None
-#         self.min_request_interval = 1.1  # Minimum 1.1 seconds between requests
-#         self.setup_database()
-    
-#     def setup_database(self):
-#         """Setup SQLite database for caching and tracking API usage"""
-#         conn = sqlite3.connect('brave_search.db')
-#         c = conn.cursor()
-        
-#         # Create table for API call tracking
-#         c.execute('''CREATE TABLE IF NOT EXISTS api_calls
-#                     (id INTEGER PRIMARY KEY,
-#                      call_date DATE,
-#                      count INTEGER)''')
-        
-#         # Create table for caching search results
-#         c.execute('''CREATE TABLE IF NOT EXISTS search_cache
-#                     (query TEXT PRIMARY KEY,
-#                      results TEXT,
-#                      timestamp DATETIME)''')
-        
-#         conn.commit()
-#         conn.close()
-
-#     def get_monthly_calls(self):
-#         """Get the number of API calls made this month"""
-#         conn = sqlite3.connect('brave_search.db')
-#         c = conn.cursor()
-        
-#         month_start = datetime.now().replace(day=1).date()
-        
-#         try:
-#             c.execute('SELECT SUM(count) FROM api_calls WHERE date(call_date) >= date(?)',
-#                      (month_start.isoformat(),))
-#             count = c.fetchone()[0]
-#         except Exception as e:
-#             print(f"Error getting monthly calls: {str(e)}")
-#             count = 0
-#         finally:
-#             conn.close()
-            
-#         return count or 0
-
-#     def record_api_call(self):
-#         """Record an API call"""
-#         conn = sqlite3.connect('brave_search.db')
-#         c = conn.cursor()
-        
-#         today = datetime.now().date()
-#         try:
-#             c.execute('''INSERT OR REPLACE INTO api_calls 
-#                         (call_date, count) 
-#                         VALUES (?, 
-#                         COALESCE((SELECT count + 1 FROM api_calls WHERE call_date = ?), 1))''',
-#                      (today, today))
-#             conn.commit()
-#         except Exception as e:
-#             print(f"Error recording API call: {str(e)}")
-#         finally:
-#             conn.close()
-
-#     def get_cached_results(self, query):
-#         """Get cached results if they exist and are not expired"""
-#         conn = sqlite3.connect('brave_search.db')
-#         c = conn.cursor()
-        
-#         # Cache expires after 7 days
-#         cache_expiry = datetime.now() - timedelta(days=7)
-        
-#         try:
-#             c.execute('''SELECT results FROM search_cache 
-#                         WHERE query = ? AND timestamp > ?''',
-#                      (query, cache_expiry))
-#             result = c.fetchone()
-            
-#             if result:
-#                 return json.loads(result[0])
-#         except Exception as e:
-#             print(f"Error getting cached results: {str(e)}")
-#         finally:
-#             conn.close()
-            
-#         return None
-
-#     def cache_results(self, query, results):
-#         """Cache search results"""
-#         conn = sqlite3.connect('brave_search.db')
-#         c = conn.cursor()
-        
-#         try:
-#             c.execute('''INSERT OR REPLACE INTO search_cache 
-#                         (query, results, timestamp) 
-#                         VALUES (?, ?, ?)''',
-#                      (query, json.dumps(results), datetime.now().isoformat()))
-#             conn.commit()
-#         except Exception as e:
-#             print(f"Error caching results: {str(e)}")
-#         finally:
-#             conn.close()
-
-#     def wait_for_rate_limit(self, reset_time=None):
-#         """Handle rate limiting with exponential backoff"""
-#         if reset_time:
-#             # If we have a reset time from the headers, wait until then
-#             wait_time = int(reset_time)
-#             print(f"Rate limit hit. Waiting {wait_time} seconds before retrying...")
-#             time.sleep(wait_time)
-#         else:
-#             # If no reset time provided, use exponential backoff
-#             if self.last_request_time:
-#                 # Ensure minimum time between requests
-#                 elapsed = time.time() - self.last_request_time
-#                 if elapsed < self.min_request_interval:
-#                     time.sleep(self.min_request_interval - elapsed)
-
-#     def parse_rate_limit_headers(self, headers):
-#         """Parse rate limit information from response headers"""
-#         try:
-#             remaining = headers.get('x-ratelimit-remaining', '').split(',')[0].strip()
-#             reset = headers.get('x-ratelimit-reset', '').split(',')[0].strip()
-#             limit = headers.get('x-ratelimit-limit', '').split(',')[0].strip()
-            
-#             return {
-#                 'remaining': int(remaining) if remaining else None,
-#                 'reset': int(reset) if reset else None,
-#                 'limit': int(limit) if limit else None
-#             }
-#         except Exception as e:
-#             print(f"Error parsing rate limit headers: {e}")
-#             return None
-
-#     def search_brave(self, query, max_retries=1):
-#         """Optimized Brave Search with rate limit handling"""
-#         print(f"\nSearching Brave for: {query}")
-        
-#         # Check monthly limit
-#         monthly_calls = self.get_monthly_calls()
-#         print(f"Monthly calls used: {monthly_calls}/{self.monthly_limit}")
-        
-#         if monthly_calls >= self.monthly_limit:
-#             print("Monthly API limit reached!")
-#             return None
-        
-#         # Check cache first
-#         cached_results = self.get_cached_results(query)
-#         if cached_results:
-#             print("Using cached results")
-#             return cached_results
-
-#         retries = 2
-#         while retries < max_retries:
-#             # Respect rate limits
-#             self.wait_for_rate_limit()
-            
-#             # Perform API call
-#             url = "https://api.search.brave.com/res/v1/web/search"
-#             headers = {
-#                 "Accept": "application/json",
-#                 "Accept-Encoding": "gzip",
-#                 "X-Subscription-Token": self.api_key
-#             }
-#             params = {
-#                 "q": query,
-#                 "count": 50,
-#                 "text_decorations": False,
-#                 "search_lang": "en"
-#             }
-            
-#             try:
-#                 print(f"Making API request (attempt {retries + 1}/{max_retries})...")
-#                 response = requests.get(url, headers=headers, params=params, timeout=30)
-#                 self.last_request_time = time.time()
-                
-#                 print(f"Response status: {response.status_code}")
-                
-#                 if response.status_code == 200:
-#                     results = response.json()
-#                     print("Successfully got results")
-                    
-#                     # Record API call
-#                     self.record_api_call()
-                    
-#                     # Cache results
-#                     self.cache_results(query, results)
-                    
-#                     if 'web' in results and 'results' in results['web']:
-#                         print(f"Found {len(results['web']['results'])} results")
-                    
-#                     return results
-                    
-#                 elif response.status_code == 429:
-#                     rate_limits = self.parse_rate_limit_headers(response.headers)
-#                     if rate_limits and rate_limits['reset']:
-#                         print(f"Rate limit exceeded. Will reset in {rate_limits['reset']} seconds")
-#                         if retries < max_retries - 1:  # Don't wait if this is the last retry
-#                             self.wait_for_rate_limit(rate_limits['reset'])
-#                     else:
-#                         # If we can't get reset time, use exponential backoff
-#                         wait_time = (2 ** retries) * 5  # 5, 10, 20 seconds
-#                         print(f"Rate limit exceeded. Waiting {wait_time} seconds...")
-#                         time.sleep(wait_time)
-                    
-#                 elif response.status_code == 422:
-#                     print("API validation error. Check parameters.")
-#                     return None
-#                 else:
-#                     print(f"API Error. Response: {response.text}")
-                
-#                 retries += 1
-                
-#             except requests.exceptions.Timeout:
-#                 print("Request timed out. The server took too long to respond.")
-#             except requests.exceptions.ConnectionError:
-#                 print("Connection error. Check your internet connection.")
-#             except Exception as e:
-#                 print(f"Exception during API call: {str(e)}")
-            
-#             retries += 2
-#             if retries < max_retries:
-#                 wait_time = (2 ** retries) * 5
-#                 print(f"Retrying in {wait_time} seconds...")
-#                 time.sleep(wait_time)
-        
-#         print("Max retries reached. Could not complete search.")
-#         return None
-
 # Shadow domain detection function
-def find_related_domains(domain, brave_api_key=None):
-    """
-    Enhanced domain pattern detection with improved Brave API integration
-    """
+def find_related_domains(domain, brave_api_key=None,  timeout=15, max_retries=2):
     related_domains = []
+    base_domain = tldextract.extract(domain).domain
+    found_domains = set()
     
+    def query_crt_sh(query, attempt=0):
+        """Helper function to query crt.sh with retries"""
+        try:
+            url = f"https://crt.sh/?q={query}&output=json"
+            response = requests.get(url, timeout=timeout)
+            
+            if response.ok:
+                try:
+                    return response.json()
+                except json.JSONDecodeError:
+                    print(f"Error decoding JSON from crt.sh for query: {query}")
+                    return []
+            else:
+                print(f"crt.sh returned status code {response.status_code} for query: {query}")
+                return []
+                
+        except requests.exceptions.Timeout:
+            if attempt < max_retries:
+                print(f"Timeout when querying crt.sh. Retrying ({attempt+1}/{max_retries})...")
+                time.sleep(2)  # Wait before retrying
+                return query_crt_sh(query, attempt + 1)
+            else:
+                print(f"Timeout when querying crt.sh after {max_retries} attempts.")
+                return []
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Error querying crt.sh: {str(e)}")
+            return []
+        
+
     # Improved pattern matching for domain variations
     def generate_domain_patterns(domain):
         extracted = tldextract.extract(domain)
@@ -445,20 +244,42 @@ def find_related_domains(domain, brave_api_key=None):
         # Basic variations
         patterns.extend([
             f"{base_domain}-",
-            f"{base_domain}_",
-            f"{base_domain}.",
-            f"{base_domain}dev",
-            f"{base_domain}test",
-            f"{base_domain}staging"
+            # f"{base_domain}_",
+            # f"{base_domain}.",
+            # f"{base_domain}dev",
+            # f"{base_domain}test",
+            # f"{base_domain}staging"
+            # f"www.{base_domain}",
+            # f"portal.{base_domain}",
+            # f"my{base_domain}",
+            # f"{base_domain} online",
+            # f"{base_domain}-secure",
+            # f"{base_domain} app",
+            # f"{base_domain} api",
+            # f"{base_domain} admin",
+            # f"{base_domain} login",
+            # f"{base_domain} mail",
+            # f"{base_domain} webmail",
+            # f"{base_domain} email",
+            # f"{base_domain} ftp",
+            # f"{base_domain} vpn",
+            # f"{base_domain} wiki",
+            # f"{base_domain} blog",
+            # f"{base_domain} forum",
+            # f"{base_domain} shop",
+            # f"{base_domain} store",
+            # f"{base_domain} support",
+            # f"{base_domain} help",
+            # f"{base_domain} contact"
         ])
         
         # Common corporate patterns
         if len(base_domain) > 1:  # Avoid too short names
             patterns.extend([
                 f"{base_domain[:3]}",  # First 3 chars
-                f"{base_domain}-corp",
-                f"{base_domain}-inc",
-                f"{base_domain}-group"
+                # f"{base_domain}-corp",
+                # f"{base_domain}-inc",
+                # f"{base_domain}-group"
             ])
         
         return patterns
@@ -469,11 +290,11 @@ def find_related_domains(domain, brave_api_key=None):
             return False
         return True
 
-    def enhanced_brave_search(api_key, query, max_retries=1):
+    def enhanced_brave_search(api_key, query, max_retries=3):
         if not validate_brave_api_key(api_key):
             return None
             
-        url = "https://api.search.brave.com/res/v1/web/search?q=brave+search"
+        url = "https://api.search.brave.com/res/v1/web/search"  # Remove the hardcoded query
         headers = {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
@@ -499,12 +320,12 @@ def find_related_domains(domain, brave_api_key=None):
                     print("Invalid Brave API key")
                     return None
                 elif response.status_code == 429:
-                    print(response.json())
+                    print(f"Rate limited. Response: {response.text}")
                     wait_time = int(response.headers.get('Retry-After', 60))
                     print(f"Rate limited. Waiting {wait_time} seconds...")
                     time.sleep(wait_time)
                 else:
-                    print(f"Brave API error: {response.status_code}")
+                    print(f"Brave API error: {response.status_code}, {response.text}")
                     
             except requests.exceptions.RequestException as e:
                 print(f"Request failed: {str(e)}")
@@ -559,7 +380,7 @@ def find_related_domains(domain, brave_api_key=None):
     try:
         # 1. Generate domain patterns
         patterns = generate_domain_patterns(domain)
-        
+
         # 2. Check SSL certificate for related domains
         ssl_domains = find_domains_in_ssl_cert(domain)
         for ssl_domain in ssl_domains:
@@ -583,29 +404,113 @@ def find_related_domains(domain, brave_api_key=None):
         
         # 4. Use Brave Search if API key is provided
         if brave_api_key:
-            # Search for each pattern
+            # Try a direct search for the domain name (not using site: operator)
             for pattern in patterns:
-                print(f"Searching for pattern: {pattern}")
-                results = enhanced_brave_search(brave_api_key, f'site:"{pattern}"')
-                if results and 'web' in results:
-                    for result in results['web'].get('results', []):
+                print(f"Searching for domain name: {pattern}")
+                results = enhanced_brave_search(brave_api_key, f'"{domain}"')
+                time.sleep(1.5)  # Respect rate limits
+                if results and 'web' in results and 'results' in results['web']:
+                    for result in results['web']['results']:
                         url = result.get('url', '')
+                        title = result.get('title', '')
+                        description = result.get('description', '')
+                        
                         if url:
                             parsed = urlparse(url)
                             found_domain = parsed.netloc.lower()
                             if found_domain.startswith('www.'):
                                 found_domain = found_domain[4:]
                                 
+                            # Don't add the domain itself
                             if found_domain != domain and found_domain not in [d['domain'] for d in related_domains]:
-                                related_domains.append({
-                                    'domain': found_domain,
-                                    'relation_type': 'Pattern Match',
-                                    'confidence': 'Medium',
-                                    'evidence': f'Matched pattern: {pattern}'
-                                })
-                time.sleep(1)
+                                # Check if this looks like a related domain
+                                extracted = tldextract.extract(found_domain)
+                                if extracted.domain and (
+                                    extracted.domain.startswith(domain[:3]) or
+                                    domain[:3] in extracted.domain or
+                                    SequenceMatcher(None, extracted.domain, tldextract.extract(domain).domain).ratio() > 0.6
+                                ):
+                                    related_domains.append({
+                                        'domain': found_domain,
+                                        'relation_type': 'Search Result',
+                                        'confidence': 'Low',
+                                        'evidence': f'Found in Brave search results for "{domain}"'
+                                    })
+        # 5. Query Certificate Transparency logs
+        print(f"Searching Certificate Transparency logs for {domain}")
+        wildcard_results = query_crt_sh(f"%.{domain}")
+    
+        for entry in wildcard_results:
+            name = entry.get('name_value', '').lower()
+            # Split on both newlines and commas
+            for domain_part in re.split(r'[\n,]', name):
+                domain_part = domain_part.strip()
+                if domain_part and '*' not in domain_part:
+                    found_domains.add(domain_part)
+
+        if not found_domains:
+            print("No results from wildcard search, trying base domain...")
+            base_results = query_crt_sh(base_domain)
         
-        # 5. Remove duplicates while preserving highest confidence
+            for entry in base_results:
+                name = entry.get('name_value', '').lower()
+                for domain_part in re.split(r'[\n,]', name):
+                    domain_part = domain_part.strip()
+                    if domain_part and '*' not in domain_part:
+                        # Check if this is a potential related domain
+                        extracted = tldextract.extract(domain_part)
+                        if extracted.domain and domain_part.endswith(f".{domain}"):
+                            found_domains.add(domain_part)
+                        # Also look for potential shadow domains
+                        elif extracted.domain and base_domain != extracted.domain and (
+                            extracted.domain.startswith(base_domain[:3]) or
+                            extracted.domain.endswith(base_domain[-3:]) or
+                            SequenceMatcher(None, extracted.domain, base_domain).ratio() > 0.6
+                        ):
+                            found_domains.add(domain_part)
+    
+        if not found_domains:
+            print("No results from crt.sh, trying alternative sources...")
+            try:
+                # Query certspotter.com API (another free CT log source)
+                url = f"https://api.certspotter.com/v1/issuances?domain={domain}&include_subdomains=true&expand=dns_names"
+                response = requests.get(url, timeout=10)
+                
+                if response.ok:
+                    data = response.json()
+                    for cert in data:
+                        dns_names = cert.get('dns_names', [])
+                        for dns_name in dns_names:
+                            if dns_name and dns_name != domain:
+                                found_domains.add(dns_name.lower())
+            except Exception as e:
+                print(f"Error using alternative CT log source: {str(e)}")
+        
+        # Process found domains from CT logs
+        for found_domain in found_domains:
+            if found_domain != domain:
+                # Determine confidence based on relationship
+                if found_domain.endswith(f".{domain}"):
+                    found_domains.remove(found_domain)
+                else:
+                    similarity = SequenceMatcher(None, 
+                                tldextract.extract(found_domain).domain, 
+                                base_domain).ratio()
+                    if similarity > 0.8:
+                        confidence = "Medium"
+                        relation = "Similar Domain"
+                    else:
+                        confidence = "Low"
+                        relation = "Potentially Related Domain"
+                
+                related_domains.append({
+                    'domain': found_domain,
+                    'relation_type': relation,
+                    'confidence': confidence,
+                    'evidence': 'Found in Certificate Transparency logs'
+                })
+
+        # 6. Remove duplicates while preserving highest confidence
         seen_domains = {}
         confidence_scores = {'High': 3, 'Medium': 2, 'Low': 1}
         

@@ -1,0 +1,141 @@
+{# templates/validate_domains.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Domain Validation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-4">Domain Validation Results</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">File Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p><span class="font-medium">File Name:</span> {{ filename }}</p>
+                    <p><span class="font-medium">Valid Domains:</span> {{ valid_domains|length }}</p>
+                </div>
+                <div>
+                    <p><span class="font-medium">Invalid Entries:</span> {{ invalid_domains|length }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Domains to Scan</h2>
+            
+            {% if error_message %}
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-red-700">{{ error_message }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% elif valid_domains %}
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-green-700">Found {{ valid_domains|length }} valid domains to scan.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form action="/process_batch_validation" method="post">
+                    <input type="hidden" name="domains_json" value="{{ valid_domains|tojson }}">
+                    
+                    <!-- Scan Options -->
+                    <div class="mb-4">
+                        <p class="text-gray-700 font-medium mb-2">Scan Options:</p>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="dns_scan" checked class="form-checkbox">
+                                <span class="ml-2">DNS Records</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="ssl_scan" checked class="form-checkbox">
+                                <span class="ml-2">SSL Certificate</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="subdomain_scan" checked class="form-checkbox">
+                                <span class="ml-2">Subdomain Discovery</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="related_domains" checked class="form-checkbox">
+                                <span class="ml-2">Related Domains</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="vuln_scan" checked class="form-checkbox">
+                                <span class="ml-2">Vulnerability Scan</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded mb-4">
+                        <h3 class="font-medium mb-2">Valid Domains for Scanning:</h3>
+                        <div class="max-h-60 overflow-y-auto">
+                            <ul class="list-disc pl-5">
+                                {% for domain in valid_domains %}
+                                    <li class="text-gray-700">{{ domain }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="text-yellow-600 bg-yellow-50 p-4 rounded mb-4">
+                        <p class="font-medium">Note:</p>
+                        <p>Scanning {{ valid_domains|length }} domains may take considerable time. The process will run in the background and you'll be able to view results once completed.</p>
+                    </div>
+                    
+                    <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Start Batch Scan
+                    </button>
+                </form>
+            {% endif %}
+            
+            {% if invalid_domains %}
+                <div class="mt-6">
+                    <h3 class="font-medium mb-2">Invalid Domain Entries:</h3>
+                    <div class="bg-red-50 p-4 rounded max-h-60 overflow-y-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Line/Row</th>
+                                    <th class="px-4 py-2 text-left">Value</th>
+                                    <th class="px-4 py-2 text-left">Issue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for domain, line in invalid_domains %}
+                                    <tr>
+                                        <td class="px-4 py-2">{{ line }}</td>
+                                        <td class="px-4 py-2 font-medium">{{ domain }}</td>
+                                        <td class="px-4 py-2 text-red-600">Invalid domain format</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="mt-6">
+            <a href="/" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 inline-block">
+                ← Back to Scanner
+            </a>
+        </div>
+    </div>
+</body>
+</html>

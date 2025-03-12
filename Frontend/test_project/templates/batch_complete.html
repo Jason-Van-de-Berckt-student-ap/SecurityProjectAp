@@ -1,0 +1,77 @@
+{# templates/batch_complete.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Batch Scan Results</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-4">Batch Scan Results</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Batch Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p><span class="font-medium">Batch ID:</span> {{ batch_id }}</p>
+                    <p><span class="font-medium">Total Domains:</span> {{ total }}</p>
+                </div>
+                <div>
+                    <p><span class="font-medium">Status:</span> <span class="px-2 py-1 bg-green-100 text-green-800 rounded">Completed</span></p>
+                    <p><span class="font-medium">Successful Scans:</span> {{ completed }}</p>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="/download/{{ combined_csv }}" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 inline-flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Download Combined Results CSV
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Domain Scan Results</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-4 py-2 text-left">Domain</th>
+                            <th class="px-4 py-2 text-left">Status</th>
+                            <th class="px-4 py-2 text-left">Findings</th>
+                            <th class="px-4 py-2 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for domain, domain_results in results.items() %}
+                            <tr class="border-t">
+                                <td class="px-4 py-2 font-medium">{{ domain }}</td>
+                                <td class="px-4 py-2">
+                                    {% if domain_results.status == 'completed' %}
+                                        <span class="px-2 py-1 text-sm rounded bg-green-100 text-green-800">
+                                            Completed
+                                        </span>
+                                    {% else %}
+                                        <span class="px-2 py-1 text-sm rounded bg-red-100 text-red-800">
+                                            Error
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2 text-gray-600">
+                                    {% if domain_results.status == 'completed' %}
+                                        {% set vuln_count = domain_results.results.vulnerabilities|length %}
+                                        {% set sub_count = domain_results.results.subdomains|length %}
+                                        {% set rel_count = domain_results.results.related_domains|length %}
+                                        <span class="inline-flex items-center px-2 py-1 mr-2 text-xs bg-red-50 text-red-700 rounded">
+                                            {{ vuln_count }} Vulnerabilities
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-1 mr-2 text-xs bg-blue-50 text-blue-700 rounded">
+                                            {{ sub_count }} Subdomains
+                                        </span>
+                                        <span class="inline-flex items-center px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded">
+                                            {{ rel_count }} Related Domains
+                                        </span>
+                                    {% else %}

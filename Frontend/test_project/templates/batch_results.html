@@ -1,0 +1,80 @@
+{# templates/batch_results.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Batch Scan Processing</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <meta http-equiv="refresh" content="10">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-4">Batch Domain Scan Processing</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Batch Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p><span class="font-medium">Batch ID:</span> {{ batch_id }}</p>
+                    <p><span class="font-medium">Total Domains:</span> {{ total }}</p>
+                </div>
+                <div>
+                    <p><span class="font-medium">Status:</span> <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">Processing</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Domains Being Processed</h2>
+            <p class="mb-4">Your scan has been queued and is being processed. This page will refresh automatically every 10 seconds.</p>
+            
+            <div class="rounded-lg bg-blue-50 p-4 mb-4">
+                <div class="flex items-center">
+                    <svg class="animate-spin h-5 w-5 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-blue-700">Processing {{ total }} domains. Please wait...</p>
+                </div>
+            </div>
+            
+            <form action="/process_batch/{{ batch_id }}" method="post" id="processBatchForm">
+                {% for key, value in scan_options.items() %}
+                    {% if value %}
+                        <input type="hidden" name="{{ key }}" value="on">
+                    {% endif %}
+                {% endfor %}
+                <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Start Processing
+                </button>
+            </form>
+            
+            <div class="mt-6">
+                <h3 class="font-medium mb-2">Domains to be scanned:</h3>
+                <div class="bg-gray-50 p-4 rounded-lg max-h-60 overflow-y-auto">
+                    <ul class="list-disc pl-5">
+                        {% for domain in domains %}
+                            <li class="text-gray-700">{{ domain }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <a href="/" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 inline-block">
+                ← Back to Scanner
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Automatically submit the form to start processing
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a moment before submitting to allow the page to fully load
+            setTimeout(function() {
+                document.getElementById('processBatchForm').submit();
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

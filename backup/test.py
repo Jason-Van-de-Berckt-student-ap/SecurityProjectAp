@@ -1,5 +1,5 @@
 import requests
-from config import BRAVE_API_KEY
+from Frontend.test_project.config import BRAVE_API_KEY
 
 def test_brave_api(api_key, query):
     """Test Brave Search API directly"""
