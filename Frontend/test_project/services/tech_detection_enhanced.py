@@ -625,7 +625,7 @@ def get_cookie_fingerprint(cookies):
     Extract technology information from cookies.
     
     Args:
-        cookies (dict): HTTP response cookies
+        cookies (dict or RequestsCookieJar): HTTP response cookies
         
     Returns:
         dict: Detected technologies from cookies
@@ -645,7 +645,24 @@ def get_cookie_fingerprint(cookies):
         r'_hjSession': 'Hotjar',
     }
     
-    for cookie_name in cookies:
+    # Convert RequestsCookieJar to a dictionary if needed
+    if not isinstance(cookies, dict):
+        # Try to access as dictionary
+        try:
+            cookie_dict = dict(cookies)
+        except:
+            # Handle the case where cookies cannot be converted to dict
+            try:
+                cookie_dict = {k: v for k, v in cookies.items()}
+            except:
+                # If all conversions fail, return empty dict
+                print("Could not process cookies")
+                return technologies
+    else:
+        cookie_dict = cookies
+    
+    # Now process the cookies dictionary
+    for cookie_name in cookie_dict:
         for pattern, tech in cookie_patterns.items():
             if re.search(pattern, cookie_name, re.IGNORECASE):
                 technologies[tech] = "Detected (via cookie)"

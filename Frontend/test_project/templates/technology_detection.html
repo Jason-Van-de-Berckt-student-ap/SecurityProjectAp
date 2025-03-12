@@ -1,0 +1,253 @@
+{# templates/technology_detection.html #}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Technology Detection</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Technology Detection Results for {{ domain }}</h1>
+        
+        {% if error %}
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+                <p class="font-bold">Error</p>
+                <p>{{ error }}</p>
+            </div>
+        {% else %}
+            <!-- Technology Stack Summary -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">Technology Stack Summary</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for category, techs in tech_data.categorized.items() %}
+                        {% if techs %}
+                            <div class="bg-gray-50 p-4 rounded border">
+                                <h3 class="font-bold text-lg mb-2">{{ category }}</h3>
+                                <ul class="space-y-1">
+                                    {% for tech, version in techs.items() %}
+                                        <li>
+                                            <span class="font-medium">{{ tech }}</span>
+                                            {% if version and version != "Detected" and version != "unknown" %}
+                                                <span class="text-gray-600 text-sm ml-2">{{ version }}</span>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Technology Vulnerabilities -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">Technology Vulnerabilities</h2>
+                
+                {% if vulnerabilities %}
+                    {% for vuln in vulnerabilities %}
+                        <div class="mb-4 p-4 rounded
+                            {% if vuln.severity == 'Critical' %}
+                                bg-purple-50 border-l-4 border-purple-500
+                            {% elif vuln.severity == 'High' %}
+                                bg-red-50 border-l-4 border-red-500
+                            {% elif vuln.severity == 'Medium' %}
+                                bg-yellow-50 border-l-4 border-yellow-500
+                            {% elif vuln.severity == 'Low' %}
+                                bg-blue-50 border-l-4 border-blue-500
+                            {% else %}
+                                bg-gray-50 border-l-4 border-gray-500
+                            {% endif %}">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
+                                <span class="px-2 py-1 text-sm rounded
+                                    {% if vuln.severity == 'Critical' %}
+                                        bg-purple-100 text-purple-800
+                                    {% elif vuln.severity == 'High' %}
+                                        bg-red-100 text-red-800
+                                    {% elif vuln.severity == 'Medium' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% elif vuln.severity == 'Low' %}
+                                        bg-blue-100 text-blue-800
+                                    {% else %}
+                                        bg-gray-100 text-gray-800
+                                    {% endif %}">
+                                    {{ vuln.severity }}
+                                </span>
+                            </div>
+                            <p class="mt-2 text-gray-600">{{ vuln.description }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-gray-600 bg-gray-50 p-4 rounded">
+                        No technology vulnerabilities detected.
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Technology Detection Graph -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">Technology Relationships</h2>
+                
+                <div class="bg-gray-50 p-4 rounded">
+                    <div class="text-center">
+                        <svg id="techGraph" class="w-full" style="height: 400px;"></svg>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        
+        <!-- Back Button -->
+        <div class="mt-6">
+            <a href="/scan?domain={{ domain }}" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
+                ← Back to Scan Results
+            </a>
+        </div>
+    </div>
+    
+    <!-- D3.js for Graph Visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <script>
+        // Technology Relationship Graph
+        document.addEventListener('DOMContentLoaded', function() {
+            // Only run if we have technology data
+            {% if tech_data and tech_data.categorized %}
+                // Set up the graph data
+                const techData = {
+                    nodes: [],
+                    links: []
+                };
+                
+                // Add domain as central node
+                techData.nodes.push({
+                    id: "{{ domain }}",
+                    group: "domain",
+                    label: "{{ domain }}"
+                });
+                
+                // Add category nodes
+                {% for category, techs in tech_data.categorized.items() %}
+                    techData.nodes.push({
+                        id: "{{ category }}",
+                        group: "category",
+                        label: "{{ category }}"
+                    });
+                    
+                    // Link domain to category
+                    techData.links.push({
+                        source: "{{ domain }}",
+                        target: "{{ category }}",
+                        value: 10
+                    });
+                    
+                    // Add technology nodes and link to category
+                    {% for tech, version in techs.items() %}
+                        const techId = "{{ tech }}_{{ loop.index }}";
+                        techData.nodes.push({
+                            id: techId,
+                            group: "technology",
+                            label: "{{ tech }}{% if version and version != 'Detected' and version != 'unknown' %} {{ version }}{% endif %}"
+                        });
+                        
+                        techData.links.push({
+                            source: "{{ category }}",
+                            target: techId,
+                            value: 5
+                        });
+                    {% endfor %}
+                {% endfor %}
+                
+                // Set up the graph
+                const width = document.getElementById('techGraph').clientWidth;
+                const height = 400;
+                
+                const svg = d3.select("#techGraph")
+                    .attr("width", width)
+                    .attr("height", height);
+                
+                // Clear any existing content
+                svg.selectAll("*").remove();
+                
+                // Create the simulation
+                const simulation = d3.forceSimulation(techData.nodes)
+                    .force("link", d3.forceLink(techData.links).id(d => d.id).distance(100))
+                    .force("charge", d3.forceManyBody().strength(-300))
+                    .force("center", d3.forceCenter(width / 2, height / 2))
+                    .force("collide", d3.forceCollide().radius(40));
+                
+                // Create the links
+                const link = svg.append("g")
+                    .selectAll("line")
+                    .data(techData.links)
+                    .enter().append("line")
+                    .attr("stroke", "#999")
+                    .attr("stroke-opacity", 0.6)
+                    .attr("stroke-width", d => Math.sqrt(d.value));
+                
+                // Create node containers
+                const node = svg.append("g")
+                    .selectAll("g")
+                    .data(techData.nodes)
+                    .enter().append("g")
+                    .call(d3.drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended));
+                
+                // Node circles with different colors based on group
+                node.append("circle")
+                    .attr("r", d => d.group === "domain" ? 20 : d.group === "category" ? 15 : 10)
+                    .attr("fill", d => {
+                        if (d.group === "domain") return "#3B82F6"; // Blue
+                        if (d.group === "category") return "#10B981"; // Green
+                        return "#F59E0B"; // Yellow for technologies
+                    });
+                
+                // Node labels
+                node.append("text")
+                    .attr("dx", d => d.group === "domain" ? 25 : d.group === "category" ? 20 : 15)
+                    .attr("dy", ".35em")
+                    .text(d => d.label)
+                    .attr("font-size", d => d.group === "domain" ? "14px" : d.group === "category" ? "12px" : "10px")
+                    .attr("font-weight", d => d.group === "domain" || d.group === "category" ? "bold" : "normal");
+                
+                // Update positions on tick
+                simulation.on("tick", () => {
+                    link
+                        .attr("x1", d => d.source.x)
+                        .attr("y1", d => d.source.y)
+                        .attr("x2", d => d.target.x)
+                        .attr("y2", d => d.target.y);
+                    
+                    node.attr("transform", d => `translate(${d.x},${d.y})`);
+                    
+                    // Keep nodes within bounds
+                    node.each(d => {
+                        d.x = Math.max(20, Math.min(width - 20, d.x));
+                        d.y = Math.max(20, Math.min(height - 20, d.y));
+                    });
+                });
+                
+                // Drag functions
+                function dragstarted(event, d) {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                }
+                
+                function dragged(event, d) {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                }
+                
+                function dragended(event, d) {
+                    if (!event.active) simulation.alphaTarget(0);
+                    d.fx = null;
+                    d.fy = null;
+                }
+            {% endif %}
+        });
+    </script>
+</body>
+</html>
