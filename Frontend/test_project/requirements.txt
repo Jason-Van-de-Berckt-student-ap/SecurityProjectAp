@@ -16,7 +16,6 @@ python-dotenv==1.0.1
 python3-nmap==1.9.1
 requests==2.32.3
 requests-file==2.1.0
-requirement.txt==0.1.0
 simplejson==3.19.3
 soupsieve==2.6
 tldextract==5.1.3
