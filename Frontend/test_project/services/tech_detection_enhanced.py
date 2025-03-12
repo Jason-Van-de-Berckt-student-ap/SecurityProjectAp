@@ -499,11 +499,22 @@ def compare_versions(version1, version2):
     Returns:
         int: -1 if version1 < version2, 0 if equal, 1 if version1 > version2
     """
+    # Handle empty strings or None values
+    if not version1 or version1 == "unknown":
+        version1 = "0.0.0"
+    if not version2 or version2 == "unknown":
+        version2 = "0.0.0"
+    
     v1 = normalize_version(version1)
     v2 = normalize_version(version2)
     
-    v1_parts = [int(x) for x in v1.split('.')]
-    v2_parts = [int(x) for x in v2.split('.')]
+    try:
+        v1_parts = [int(x) for x in v1.split('.')]
+        v2_parts = [int(x) for x in v2.split('.')]
+    except ValueError:
+        # If conversion to int fails, treat as 0.0.0
+        v1_parts = [0, 0, 0]
+        v2_parts = [0, 0, 0]
     
     for i in range(max(len(v1_parts), len(v2_parts))):
         v1_part = v1_parts[i] if i < len(v1_parts) else 0
@@ -554,6 +565,7 @@ def extract_version(text, technology_name=None):
     for pattern in patterns:
         match = re.search(pattern, text)
         if match:
+            # print(match.group(1))
             return match.group(1)
     
     return "unknown"
@@ -621,6 +633,7 @@ def get_headers_fingerprint(headers):
     return technologies
 
 def get_cookie_fingerprint(cookies):
+    print("Namijken van cookies")
     """
     Extract technology information from cookies.
     
@@ -670,6 +683,7 @@ def get_cookie_fingerprint(cookies):
     return technologies
 
 def extract_technologies_from_html(html_content, url):
+    print("extract technologies from html")
     """
     Extract technologies from HTML content.
     
@@ -791,6 +805,7 @@ def extract_technologies_from_html(html_content, url):
     return technologies
 
 def analyze_vulnerabilities(tech_data):
+    print("Analyseren van zwakheden.")
     """
     Analyze vulnerabilities based on detected technologies.
     
@@ -872,6 +887,7 @@ def analyze_vulnerabilities(tech_data):
     return vulnerabilities
 
 def categorize_technologies(tech_data):
+    print("Sorteren van technologieën")
     """
     Categorize detected technologies by type.
     
@@ -932,6 +948,7 @@ def categorize_technologies(tech_data):
 # Add these main functions at the end of your tech_detection_enhanced.py file
 
 def get_website_technologies(domain):
+    print("Web pagina technologieën ophalen")
     """
     Main function to detect technologies used on a website.
     
@@ -1001,6 +1018,7 @@ def get_website_technologies(domain):
         }
 
 def check_tech_vulnerabilities(domain):
+    print("Nakijken van zwakheden.")
     """
     Check for vulnerabilities based on detected technologies.
     
