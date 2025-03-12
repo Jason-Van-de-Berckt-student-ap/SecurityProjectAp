@@ -71,11 +71,22 @@ def batch_scan():
     return jsonify({'error': 'File type not allowed'}), 400
 
 @batch_scan_bp.route('/process_batch_validation', methods=['POST'])
+@batch_scan_bp.route('/process_batch_validation', methods=['POST'])
 def process_batch_validation():
     """Process validated domains from the batch upload."""
-    # Get domains from form
-    domains_json = request.form.get('domains_json', '[]')
-    domains = json.loads(domains_json)
+    # Get domains from form with better error handling
+    try:
+        domains_json = request.form.get('domains_json', '[]')
+        print(domains_json)
+        print(f"Received domains_json: {domains_json}")  # Debug print
+        domains = json.loads(domains_json)
+        print(f"Parsed domains: {domains}")  # Debug print
+    except json.JSONDecodeError as e:
+        print(f"JSON parsing error: {str(e)}")
+        print(f"Received data: {domains_json}")
+        return render_template('error.html', 
+                               error_message=f"Invalid domain data format: {str(e)}", 
+                               back_url=url_for('single_scan.index'))
     
     if not domains:
         return redirect(url_for('single_scan.index'))
