@@ -4,6 +4,13 @@
 <head>
     <title>Technology Detection</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <script>
+        // Safe default data
+        const defaultTechData = {
+            raw_technologies: {},
+            categorized: {}
+        };
+    </script>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
@@ -19,24 +26,12 @@
             <div class="bg-white p-6 rounded-lg shadow mb-6">
                 <h2 class="text-xl font-bold mb-4">Technology Stack Summary</h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {% for category, techs in tech_data.categorized.items() %}
-                        {% if techs %}
-                            <div class="bg-gray-50 p-4 rounded border">
-                                <h3 class="font-bold text-lg mb-2">{{ category }}</h3>
-                                <ul class="space-y-1">
-                                    {% for tech, version in techs.items() %}
-                                        <li>
-                                            <span class="font-medium">{{ tech }}</span>
-                                            {% if version and version != "Detected" and version != "unknown" %}
-                                                <span class="text-gray-600 text-sm ml-2">{{ version }}</span>
-                                            {% endif %}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+                <div id="tech-data" data-domain="{{ domain }}" style="display: none;">
+                    {% if tech_data is not none %}
+                        {{ tech_data|tojson|safe }}
+                    {% else %}
+                        {}
+                    {% endif %}
                 </div>
             </div>
             
@@ -105,149 +100,199 @@
         </div>
     </div>
     
+    <!-- Hidden data for JavaScript -->
+    <div id="tech-data" data-domain="{{ domain }}" style="display: none;">
+        {{ tech_data|tojson|safe }}
+    </div>
+    
     <!-- D3.js for Graph Visualization -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     
     <script>
-        // Technology Relationship Graph
         document.addEventListener('DOMContentLoaded', function() {
-            // Only run if we have technology data
-            {% if tech_data and tech_data.categorized %}
-                // Set up the graph data
-                const techData = {
-                    nodes: [],
-                    links: []
-                };
+                try {
+                    // Get data from hidden div with fallback
+                    const dataElement = document.getElementById('tech-data');
+                    const domain = dataElement.getAttribute('data-domain') || 'unknown';
+                    let techData;
+                    
+                    try {
+                        const jsonText = dataElement.textContent.trim();
+                        techData = jsonText ? JSON.parse(jsonText) : defaultTechData;
+                    } catch (parseError) {
+                        console.error("Error parsing tech data:", parseError);
+                        techData = defaultTechData;
+                    }
+                    
+                    // Only proceed if we have valid data with a categorized property
+                    if (techData && techData.categorized) {
+                        createTechGraph(domain, techData);
+                    }
+                } catch (error) {
+                    console.error("Error initializing technology graph:", error);
+                }
+            });
+        
+        function createTechGraph(domain, techData) {
+            // Set up the graph data
+            const graphData = {
+                nodes: [],
+                links: []
+            };
+            
+            // Add domain as central node
+            graphData.nodes.push({
+                id: "domain_center",
+                group: "domain",
+                label: domain
+            });
+            
+            // Add category nodes and their technologies
+            let categoryIndex = 0;
+            for (const [category, techs] of Object.entries(techData.categorized)) {
+                // Skip empty categories
+                if (!techs || Object.keys(techs).length === 0) continue;
                 
-                // Add domain as central node
-                techData.nodes.push({
-                    id: "{{ domain }}",
-                    group: "domain",
-                    label: "{{ domain }}"
+                const categoryId = `category_${categoryIndex}`;
+                categoryIndex++;
+                
+                // Add category node
+                graphData.nodes.push({
+                    id: categoryId,
+                    group: "category",
+                    label: category
                 });
                 
-                // Add category nodes
-                {% for category, techs in tech_data.categorized.items() %}
-                    techData.nodes.push({
-                        id: "{{ category }}",
-                        group: "category",
-                        label: "{{ category }}"
-                    });
-                    
-                    // Link domain to category
-                    techData.links.push({
-                        source: "{{ domain }}",
-                        target: "{{ category }}",
-                        value: 10
-                    });
-                    
-                    // Add technology nodes and link to category
-                    {% for tech, version in techs.items() %}
-                        const techId = "{{ tech }}_{{ loop.index }}";
-                        techData.nodes.push({
-                            id: techId,
-                            group: "technology",
-                            label: "{{ tech }}{% if version and version != 'Detected' and version != 'unknown' %} {{ version }}{% endif %}"
-                        });
-                        
-                        techData.links.push({
-                            source: "{{ category }}",
-                            target: techId,
-                            value: 5
-                        });
-                    {% endfor %}
-                {% endfor %}
-                
-                // Set up the graph
-                const width = document.getElementById('techGraph').clientWidth;
-                const height = 400;
-                
-                const svg = d3.select("#techGraph")
-                    .attr("width", width)
-                    .attr("height", height);
-                
-                // Clear any existing content
-                svg.selectAll("*").remove();
-                
-                // Create the simulation
-                const simulation = d3.forceSimulation(techData.nodes)
-                    .force("link", d3.forceLink(techData.links).id(d => d.id).distance(100))
-                    .force("charge", d3.forceManyBody().strength(-300))
-                    .force("center", d3.forceCenter(width / 2, height / 2))
-                    .force("collide", d3.forceCollide().radius(40));
-                
-                // Create the links
-                const link = svg.append("g")
-                    .selectAll("line")
-                    .data(techData.links)
-                    .enter().append("line")
-                    .attr("stroke", "#999")
-                    .attr("stroke-opacity", 0.6)
-                    .attr("stroke-width", d => Math.sqrt(d.value));
-                
-                // Create node containers
-                const node = svg.append("g")
-                    .selectAll("g")
-                    .data(techData.nodes)
-                    .enter().append("g")
-                    .call(d3.drag()
-                        .on("start", dragstarted)
-                        .on("drag", dragged)
-                        .on("end", dragended));
-                
-                // Node circles with different colors based on group
-                node.append("circle")
-                    .attr("r", d => d.group === "domain" ? 20 : d.group === "category" ? 15 : 10)
-                    .attr("fill", d => {
-                        if (d.group === "domain") return "#3B82F6"; // Blue
-                        if (d.group === "category") return "#10B981"; // Green
-                        return "#F59E0B"; // Yellow for technologies
-                    });
-                
-                // Node labels
-                node.append("text")
-                    .attr("dx", d => d.group === "domain" ? 25 : d.group === "category" ? 20 : 15)
-                    .attr("dy", ".35em")
-                    .text(d => d.label)
-                    .attr("font-size", d => d.group === "domain" ? "14px" : d.group === "category" ? "12px" : "10px")
-                    .attr("font-weight", d => d.group === "domain" || d.group === "category" ? "bold" : "normal");
-                
-                // Update positions on tick
-                simulation.on("tick", () => {
-                    link
-                        .attr("x1", d => d.source.x)
-                        .attr("y1", d => d.source.y)
-                        .attr("x2", d => d.target.x)
-                        .attr("y2", d => d.target.y);
-                    
-                    node.attr("transform", d => `translate(${d.x},${d.y})`);
-                    
-                    // Keep nodes within bounds
-                    node.each(d => {
-                        d.x = Math.max(20, Math.min(width - 20, d.x));
-                        d.y = Math.max(20, Math.min(height - 20, d.y));
-                    });
+                // Link domain to category
+                graphData.links.push({
+                    source: "domain_center",
+                    target: categoryId,
+                    value: 10
                 });
                 
-                // Drag functions
-                function dragstarted(event, d) {
-                    if (!event.active) simulation.alphaTarget(0.3).restart();
-                    d.fx = d.x;
-                    d.fy = d.y;
+                // Add technology nodes and link to category
+                let techIndex = 0;
+                for (const [tech, version] of Object.entries(techs)) {
+                    const techId = `tech_${categoryIndex}_${techIndex}`;
+                    techIndex++;
+                    
+                    // Create label with version if available
+                    let label = tech;
+                    if (version && version !== "Detected" && version !== "unknown") {
+                        label += ` ${version}`;
+                    }
+                    
+                    // Add technology node
+                    graphData.nodes.push({
+                        id: techId,
+                        group: "technology",
+                        label: label
+                    });
+                    
+                    // Link technology to its category
+                    graphData.links.push({
+                        source: categoryId,
+                        target: techId,
+                        value: 5
+                    });
                 }
+            }
+            
+            // Don't proceed if we don't have enough nodes
+            if (graphData.nodes.length <= 1) {
+                return;
+            }
+            
+            // Set up the graph
+            const graphElement = document.getElementById('techGraph');
+            const width = graphElement.clientWidth;
+            const height = 400;
+            
+            const svg = d3.select("#techGraph")
+                .attr("width", width)
+                .attr("height", height);
+            
+            // Clear any existing content
+            svg.selectAll("*").remove();
+            
+            // Create the simulation
+            const simulation = d3.forceSimulation(graphData.nodes)
+                .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(100))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collide", d3.forceCollide().radius(40));
+            
+            // Create the links
+            const link = svg.append("g")
+                .selectAll("line")
+                .data(graphData.links)
+                .enter().append("line")
+                .attr("stroke", "#999")
+                .attr("stroke-opacity", 0.6)
+                .attr("stroke-width", d => Math.sqrt(d.value));
+            
+            // Create node containers
+            const node = svg.append("g")
+                .selectAll("g")
+                .data(graphData.nodes)
+                .enter().append("g")
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+            
+            // Node circles with different colors based on group
+            node.append("circle")
+                .attr("r", d => d.group === "domain" ? 20 : d.group === "category" ? 15 : 10)
+                .attr("fill", d => {
+                    if (d.group === "domain") return "#3B82F6"; // Blue
+                    if (d.group === "category") return "#10B981"; // Green
+                    return "#F59E0B"; // Yellow for technologies
+                });
+            
+            // Node labels
+            node.append("text")
+                .attr("dx", d => d.group === "domain" ? 25 : d.group === "category" ? 20 : 15)
+                .attr("dy", ".35em")
+                .text(d => d.label)
+                .attr("font-size", d => d.group === "domain" ? "14px" : d.group === "category" ? "12px" : "10px")
+                .attr("font-weight", d => d.group === "domain" || d.group === "category" ? "bold" : "normal");
+            
+            // Update positions on tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
                 
-                function dragged(event, d) {
-                    d.fx = event.x;
-                    d.fy = event.y;
-                }
+                node.attr("transform", d => `translate(${d.x},${d.y})`);
                 
-                function dragended(event, d) {
-                    if (!event.active) simulation.alphaTarget(0);
-                    d.fx = null;
-                    d.fy = null;
-                }
-            {% endif %}
-        });
+                // Keep nodes within bounds
+                node.each(d => {
+                    d.x = Math.max(20, Math.min(width - 20, d.x));
+                    d.y = Math.max(20, Math.min(height - 20, d.y));
+                });
+            });
+            
+            // Drag functions
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+            
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+            
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+        }
     </script>
 </body>
 </html>

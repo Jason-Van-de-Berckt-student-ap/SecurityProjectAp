@@ -9,7 +9,6 @@ tech_detection_bp = Blueprint('tech_detection', __name__)
 
 @tech_detection_bp.route('/tech_detection', methods=['GET'])
 def tech_detection():
-    """Scan a domain for technologies and display results."""
     domain = request.args.get('domain', '')
     
     if not domain:
@@ -19,18 +18,29 @@ def tech_detection():
         # Get technology data
         tech_data = scan_website_technologies(domain)
         
-        # Get vulnerability data specific to technologies
+        # Ensure tech_data is JSON serializable
+        if tech_data is None:
+            tech_data = {'raw_technologies': {}, 'categorized': {}}
+        
+        # Ensure categorized exists
+        if 'categorized' not in tech_data:
+            tech_data['categorized'] = {}
+            
+        # Get vulnerability data
         vulnerabilities = get_technology_vulnerabilities(domain)
         
-        # Render template with results
+        # Return the template with the prepared data
         return render_template('technology_detection.html',
-                             domain=domain,
-                             tech_data=tech_data,
-                             vulnerabilities=vulnerabilities)
+                              domain=domain,
+                              tech_data=tech_data,
+                              vulnerabilities=vulnerabilities)
     except Exception as e:
+        print(f"Error in tech_detection: {str(e)}")
         return render_template('technology_detection.html',
-                             domain=domain,
-                             error=str(e))
+                              domain=domain,
+                              error=str(e),
+                              tech_data={'raw_technologies': {}, 'categorized': {}},
+                              vulnerabilities=[])
 
 @tech_detection_bp.route('/api/tech_detection', methods=['GET'])
 def tech_detection_api():
