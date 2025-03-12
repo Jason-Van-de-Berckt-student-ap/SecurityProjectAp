@@ -5,12 +5,8 @@ This module provides WhatRuns-like functionality to detect web technologies.
 import requests
 from bs4 import BeautifulSoup
 import re
-import json
 import urllib3
-import time
-import hashlib
 from urllib.parse import urlparse
-import tldextract
 
 # Suppress only the single InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
