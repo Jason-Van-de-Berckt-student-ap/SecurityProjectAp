@@ -5,7 +5,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Kopieer de requirements.txt vanuit de Frontend/Test_project map naar de container
-COPY frontend/test_project/requirements.txt .
+COPY /project/requirements.txt .
 
 # Installeer de benodigde Python packages
 RUN pip install --no-cache-dir -r requirements.txt
@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5000
 
 # Definieer het commando om de applicatie te starten
-CMD ["python", "/project/app.py"]
+CMD ["python", "project/app.py"]
