@@ -48,7 +48,7 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
         except requests.exceptions.Timeout:
             if attempt < max_retries:
                 print(f"Timeout when querying crt.sh. Retrying ({attempt+1}/{max_retries})...")
-                time.sleep(2)  # Wait before retrying
+                time.sleep(0.5)  # Wait before retrying
                 return query_crt_sh(query, attempt + 1)
             else:
                 print(f"Timeout when querying crt.sh after {max_retries} attempts.")
