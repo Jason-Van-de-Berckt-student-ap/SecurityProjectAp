@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5000
 
 # Definieer het commando om de applicatie te starten
-CMD ["python", "Frontend/test_project/app.py"]
+CMD ["python", "frontend/test_project/app.py"]
