@@ -112,7 +112,16 @@
                                         {{ vuln.severity }}
                                     </span>
                                 </div>
-                                <p class="mt-2 text-gray-700">{{ vuln.description }}</p>
+                         <p class="mt-2 text-gray-600">
+                            {# Splits de beschrijving op CVE-codes en vervang ze door hyperlinks #}
+                            {% set description_parts = vuln.description.split('CVE-') %}
+                            {{ description_parts[0] | safe }}
+                            {% for part in description_parts[1:] %}
+                                {% set cve_code = 'CVE-' ~ part.split()[0].rstrip(',') %}
+                                <a href="https://www.cvedetails.com/cve/{{ cve_code }}/" target="_blank" class="text-blue-500 hover:text-blue-700">{{ cve_code }}</a>
+                                {{ part.split(' ', 1)[1] if part.split(' ', 1)|length > 1 else '' | safe }}
+                            {% endfor %}
+                        </p>
                             </div>
                         {% endfor %}
                     </div>
