@@ -4,11 +4,11 @@
 <head>
     <title>Batch Scan Processing</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-    <meta http-equiv="refresh" content="10">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen" x-data="{ processing: false, completed: false }">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-4">Batch Domain Scan Processing</h1>
+        <h1 class="text-3xl font-bold mb-4">Batch Scan Processing</h1>
         
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-bold mb-4">Batch Information</h2>
@@ -18,63 +18,127 @@
                     <p><span class="font-medium">Total Domains:</span> {{ total }}</p>
                 </div>
                 <div>
-                    <p><span class="font-medium">Status:</span> <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">Processing</span></p>
+                    <p><span class="font-medium">Status:</span> 
+                        <span x-show="!processing && !completed" class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">Ready</span>
+                        <span x-show="processing && !completed" class="px-2 py-1 bg-blue-100 text-blue-800 rounded">Processing</span>
+                        <span x-show="completed" class="px-2 py-1 bg-green-100 text-green-800 rounded">Completed</span>
+                    </p>
+                    <p><span class="font-medium">Completed:</span> <span id="completed-count">{{ completed }}</span> / {{ total }}</p>
                 </div>
+            </div>
+            
+            <div class="mt-4">
+                <h3 class="font-medium mb-2">Selected Scan Options:</h3>
+                <ul class="list-disc list-inside">
+                    {% if scan_options.dns_scan %}
+                        <li>DNS Records</li>
+                    {% endif %}
+                    {% if scan_options.ssl_scan %}
+                        <li>SSL Certificate</li>
+                    {% endif %}
+                    {% if scan_options.vuln_scan %}
+                        <li>Vulnerability Scan</li>
+                    {% endif %}
+                    {% if scan_options.subdomain_scan %}
+                        <li>Subdomain Discovery</li>
+                    {% endif %}
+                    {% if scan_options.related_domains %}
+                        <li>Related Domains</li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
         
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-bold mb-4">Domains Being Processed</h2>
-            <p class="mb-4">Your scan has been queued and is being processed. This page will refresh automatically every 10 seconds.</p>
+            <h2 class="text-xl font-bold mb-4">Domains to Process</h2>
             
-            <div class="rounded-lg bg-blue-50 p-4 mb-4">
-                <div class="flex items-center">
-                    <svg class="animate-spin h-5 w-5 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p class="text-blue-700">Processing {{ total }} domains. Please wait...</p>
-                </div>
-            </div>
-            
-            <form action="/process_batch/{{ batch_id }}" method="post" id="processBatchForm">
-                {% for key, value in scan_options.items() %}
-                    {% if value %}
-                        <input type="hidden" name="{{ key }}" value="on">
-                    {% endif %}
-                {% endfor %}
-                <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    Start Processing
-                </button>
-            </form>
-            
-            <div class="mt-6">
-                <h3 class="font-medium mb-2">Domains to be scanned:</h3>
-                <div class="bg-gray-50 p-4 rounded-lg max-h-60 overflow-y-auto">
-                    <ul class="list-disc pl-5">
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-4 py-2 text-left">Domain</th>
+                            <th class="px-4 py-2 text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="domains-table">
                         {% for domain in domains %}
-                            <li class="text-gray-700">{{ domain }}</li>
+                            <tr class="border-t">
+                                <td class="px-4 py-2 font-medium">{{ domain }}</td>
+                                <td class="px-4 py-2 domain-status" data-domain="{{ domain }}">
+                                    <span class="px-2 py-1 text-sm rounded bg-yellow-100 text-yellow-800">
+                                        Waiting
+                                    </span>
+                                </td>
+                            </tr>
                         {% endfor %}
-                    </ul>
-                </div>
+                    </tbody>
+                </table>
             </div>
         </div>
         
-        <div class="mt-6">
+        <div class="mt-6 flex flex-wrap gap-4">
+            <button id="start-processing" 
+                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
+                    x-bind:disabled="processing || completed"
+                    @click="processing = true; startProcessing()">
+                Start Processing
+            </button>
+            
+            <a x-show="completed" 
+               href="/batch_results/{{ batch_id }}" 
+               class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 inline-block">
+                View Results
+            </a>
+            
             <a href="/" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 inline-block">
                 ← Back to Scanner
             </a>
         </div>
     </div>
-
+    
     <script>
-        // Automatically submit the form to start processing
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait a moment before submitting to allow the page to fully load
-            setTimeout(function() {
-                document.getElementById('processBatchForm').submit();
-            }, 1500);
-        });
+        function startProcessing() {
+            const batchId = '{{ batch_id }}';
+            
+            // Send the request to process the batch
+            fetch(`/process_batch/${batchId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(html => {
+                // Processing complete, redirect to results page
+                document.querySelector('body').__x.$data.completed = true;
+                document.querySelector('body').__x.$data.processing = false;
+                
+                // Replace the current page with the results
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing the batch.');
+                document.querySelector('body').__x.$data.processing = false;
+            });
+            
+            // Update the domain statuses to "Processing"
+            const domainStatuses = document.querySelectorAll('.domain-status');
+            domainStatuses.forEach(statusCell => {
+                statusCell.innerHTML = `
+                    <span class="px-2 py-1 text-sm rounded bg-blue-100 text-blue-800">
+                        Processing
+                    </span>
+                `;
+            });
+        }
     </script>
 </body>
 </html>

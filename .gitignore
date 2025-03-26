@@ -1,4 +1,4 @@
-scan_result*
+results/
 easm.db
 domainlist.txt
 .env
@@ -12,3 +12,4 @@ env/
 venv/
 .env.local
 .env.*.local
+uploads/

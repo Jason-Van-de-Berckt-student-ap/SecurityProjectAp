@@ -2,10 +2,11 @@
 Single domain scan routes for the EASM application.
 These routes handle individual domain scanning.
 """
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, send_from_directory
 import json
 from datetime import datetime
-import sqlite3
+import sqlite3,os
+from pathlib import Path
 
 # Import services
 from services.dns_service import get_dns_records
@@ -111,3 +112,15 @@ def scan_domain():
                              vulnerabilities=[],
                              subdomains=[],
                              related_domains=[])
+
+@single_scan_bp.route('/download/<filename>')
+def download_batch_file(filename):
+    """Download a file from a specific batch directory."""
+    try:
+        file_path = os.path.join('results')
+        if not os.path.exists(file_path):
+            return jsonify({'error': f'File {filename} not found in {file_path}'}), 404
+            
+        return send_from_directory(file_path,filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': f'Error downloading file: {str(e)} {file_path}'}), 500
