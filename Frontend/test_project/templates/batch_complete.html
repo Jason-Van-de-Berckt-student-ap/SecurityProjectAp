@@ -23,7 +23,7 @@
             </div>
             
             <div class="mt-4">
-                <a href="/download/{{ combined_csv }}" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 inline-flex items-center">
+                <a href="/download/{{ batch_id }}/{{ combined_csv }}" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 inline-flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
@@ -75,3 +75,46 @@
                                             {{ rel_count }} Related Domains
                                         </span>
                                     {% else %}
+                                        {{ domain_results.error }}
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-2">
+                                    {% if domain_results.status == 'completed' %}
+                                        <a href="/results/{{ domain }}?batch_id={{ batch_id }}" class="text-blue-500 hover:text-blue-700 mr-3" target="_blank">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                            </svg>
+                                            View
+                                        </a>
+                                        <a href="/download/{{ batch_id }}/{{ domain }}.csv" class="text-green-500 hover:text-green-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                            CSV
+                                        </a>
+                                    {% else %}
+                                        <button class="text-gray-400 cursor-not-allowed" disabled>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
+                                            </svg>
+                                            N/A
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Back Button -->
+        <div class="mt-6">
+            <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
+                ← Back to Scanner
+            </a>
+        </div>
+    </div>
+</body>
+</html>

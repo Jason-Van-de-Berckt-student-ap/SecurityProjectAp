@@ -10,6 +10,9 @@ import csv
 import sqlite3
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from pathlib import Path
+
+
 
 # Import services
 from services.dns_service import get_dns_records
@@ -71,22 +74,11 @@ def batch_scan():
     return jsonify({'error': 'File type not allowed'}), 400
 
 @batch_scan_bp.route('/process_batch_validation', methods=['POST'])
-@batch_scan_bp.route('/process_batch_validation', methods=['POST'])
 def process_batch_validation():
     """Process validated domains from the batch upload."""
     # Get domains from form with better error handling
-    try:
-        domains_json = request.form.get('domains_json', '[]')
-        print(domains_json)
-        print(f"Received domains_json: {domains_json}")  # Debug print
-        domains = json.loads(domains_json)
-        print(f"Parsed domains: {domains}")  # Debug print
-    except json.JSONDecodeError as e:
-        print(f"JSON parsing error: {str(e)}")
-        print(f"Received data: {domains_json}")
-        return render_template('error.html', 
-                               error_message=f"Invalid domain data format: {str(e)}", 
-                               back_url=url_for('single_scan.index'))
+    domains_list = request.form.get('domains_list', '')
+    domains = [d.strip() for d in domains_list.split(',') if d.strip()]
     
     if not domains:
         return redirect(url_for('single_scan.index'))
@@ -114,12 +106,8 @@ def process_batch_validation():
     with open(os.path.join(batch_dir, 'options.json'), 'w') as f:
         json.dump(scan_options, f)
     
-    # Return batch results page
-    return render_template('batch_results.html',
-                         batch_id=batch_id,
-                         domains=domains,
-                         total=len(domains),
-                         scan_options=scan_options)
+    # Redirect to the batch results page
+    return redirect(url_for('batch_scan.batch_results_view', batch_id=batch_id))
 
 @batch_scan_bp.route('/process_batch/<batch_id>', methods=['POST'])
 def process_batch(batch_id):
@@ -187,8 +175,37 @@ def process_batch(batch_id):
             conn.commit()
             conn.close()
             
-            # Export results to CSV
-            csv_file = export_to_csv(results, domain)
+            # Export results to individual CSV
+            csv_file = f"{domain}.csv"
+            csv_path = os.path.join(batch_dir, csv_file)
+            
+            # Create individual domain CSV file
+            with open(csv_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Category', 'Finding', 'Details'])
+                
+                # Write DNS records
+                for record_type, records in results['dns_info'].items():
+                    for record in records:
+                        writer.writerow(['DNS Record', record_type, record])
+                
+                # Write vulnerabilities
+                for vuln in results['vulnerabilities']:
+                    writer.writerow(['Vulnerability', 
+                                   f"{vuln['title']} ({vuln['severity']})", 
+                                   vuln['description']])
+                
+                # Write subdomains
+                for sub in results['subdomains']:
+                    writer.writerow(['Subdomain', 
+                                   sub['subdomain'], 
+                                   f"IP: {sub['ip']}, Status: {sub['status']}"])
+                
+                # Write related domains
+                for related in results['related_domains']:
+                    writer.writerow(['Related Domain',
+                                   f"{related['domain']} ({related['confidence']})",
+                                   f"Type: {related['relation_type']}, Evidence: {related['evidence']}"])
             
             # Store results for this domain
             all_results[domain] = {
@@ -209,8 +226,10 @@ def process_batch(batch_id):
         json.dump(all_results, f)
     
     # Create a combined CSV report
-    combined_csv = os.path.join(batch_dir, f'combined_results_{batch_id}.csv')
-    with open(combined_csv, 'w', newline='') as f:
+    combined_csv = f'combined_results_{batch_id}.csv'
+    combined_csv_path = os.path.join(batch_dir, combined_csv)
+    
+    with open(combined_csv_path, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['Domain', 'Category', 'Finding', 'Details'])
         
@@ -247,10 +266,114 @@ def process_batch(batch_id):
                          batch_id=batch_id, 
                          results=all_results,
                          total=len(domains),
-                         completed=len(all_results),
-                         combined_csv=os.path.basename(combined_csv))
+                         completed=len([d for d in all_results.values() if d['status'] == 'completed']),
+                         combined_csv=combined_csv)
+@batch_scan_bp.route('/batch_results/<batch_id>')
+def batch_results_view(batch_id):
+    """Display the batch results page for tracking scan progress."""
+    batch_dir = os.path.join('results', batch_id)
+    
+    # Read domains from the stored file
+    try:
+        with open(os.path.join(batch_dir, 'domains.txt'), 'r') as f:
+            domains = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        return jsonify({'error': 'Batch not found'}), 404
+    
+    # Get scan options from the stored file
+    with open(os.path.join(batch_dir, 'options.json'), 'r') as f:
+        scan_options = json.load(f)
+    
+    # Check if results exist
+    results_file = os.path.join(batch_dir, 'all_results.json')
+    completed = 0
+    results = {}
+    
+    if os.path.exists(results_file):
+        with open(results_file, 'r') as f:
+            results = json.load(f)
+        completed = sum(1 for r in results.values() if r.get('status') == 'completed')
+        
+        # If all domains are processed, redirect to completion page
+        if completed == len(domains):
+            combined_csv = f'combined_results_{batch_id}.csv'
+            return render_template('batch_complete.html', 
+                                batch_id=batch_id, 
+                                results=results,
+                                total=len(domains),
+                                completed=completed,
+                                combined_csv=combined_csv)
+    
+    # Render the batch results tracking page
+    return render_template('batch_results.html',
+                         batch_id=batch_id,
+                         domains=domains,
+                         total=len(domains),
+                         completed=completed,
+                         scan_options=scan_options) 
+@batch_scan_bp.route('/results/<domain>', methods=['GET', 'POST']) 
+def view_batch_results(domain):
+    """View the results for a specific domain in a batch scan."""
+    try:
+        # Get the batch_id from the request
+        batch_id = request.args.get('batch_id')
+        if not batch_id:
+            return jsonify({'error': 'Missing batch ID'}), 400
+            
+        # Load the results for this batch
+        batch_dir = os.path.join('results', batch_id)
+        with open(os.path.join(batch_dir, 'all_results.json'), 'r') as f:
+            all_results = json.load(f)
+        
+        # Get this domain's results
+        if domain not in all_results:
+            return jsonify({'error': 'Domain not found in batch'}), 404
+            
+        domain_results = all_results[domain]
+        
+        # Render the results template
+        if domain_results['status'] == 'completed':
+            results = domain_results['results']
+            return render_template('results.html',
+                                domain=domain,
+                                dns_info=results['dns_info'],
+                                ssl_info=results['ssl_info'],
+                                vulnerabilities=results['vulnerabilities'],
+                                subdomains=results['subdomains'],
+                                related_domains=results['related_domains'],
+                                csv_file=domain_results.get('csv_file', ''),
+                                batch_id=batch_id)
+        else:
+            return render_template('results.html',
+                                domain=domain,
+                                error=domain_results['error'],
+                                dns_info={},
+                                ssl_info={'error': 'Scan failed'},
+                                vulnerabilities=[],
+                                subdomains=[],
+                                related_domains=[])
+    except Exception as e:
+        return render_template('results.html',
+                            domain=domain,
+                            error=str(e),
+                            dns_info={},
+                            ssl_info={'error': 'Scan failed'},
+                            vulnerabilities=[],
+                            subdomains=[],
+                            related_domains=[])
 
-@batch_scan_bp.route('/download/<path:filename>')
-def download_file(filename):
-    """Download a file from the results directory."""
-    return send_from_directory('results', filename, as_attachment=True)
+@batch_scan_bp.route('/download/<batch_id>/<filename>')
+def download_batch_file(batch_id, filename):
+    """Download a file from a specific batch directory."""
+    try:
+        batch_dir = os.path.join('results', batch_id)
+        if not os.path.exists(batch_dir):
+            return jsonify({'error': f'Batch {batch_id} not found'}), 404
+            
+        file_path = os.path.join(batch_dir, filename)
+        if not os.path.exists(file_path):
+            return jsonify({'error': f'File {filename} not found in batch {batch_id}'}), 404
+            
+        return send_from_directory(batch_dir, filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
