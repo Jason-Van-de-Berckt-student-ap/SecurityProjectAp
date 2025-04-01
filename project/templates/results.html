@@ -2,14 +2,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ domain }} - Scan Results</title>
+    <title>Scan Results</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-4">Scan Results for {{ domain }}</h1>
-        
-        {% if error %}
+        <h1 class="text-3xl font-bold mb-8">Scan Results for {{ domain }}</h1>
+		
+		{% if error %}
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
                 <p class="font-bold">Error</p>
                 <p>{{ error }}</p>
@@ -33,86 +33,172 @@
                     </a>
                 {% endif %}
             </div>
-            
-            <!-- DNS Information -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4">DNS Information</h2>
-                
-                {% if dns_info %}
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full table-auto">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="px-4 py-2 text-left">Record Type</th>
-                                    <th class="px-4 py-2 text-left">Value</th>
+        
+        <!-- DNS Records Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">DNS Records</h2>
+            {% for record_type, records in dns_info.items() %}
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-700">{{ record_type }}</h3>
+                    <ul class="list-disc pl-5">
+                    {% for record in records %}
+                        <li class="text-gray-600">{{ record }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+        <!-- <div class="mt-4 flex space-x-4">
+            <a href="tech_detection?domain={{ domain }}" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 inline-flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clip-rule="evenodd" />
+                </svg>
+                View Technology Stack
+            </a>
+        </div> -->
+        <!-- SSL Certificate Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">SSL Certificate</h2>
+            {% if 'error' in ssl_info %}
+                <div class="text-red-500 bg-red-50 p-3 rounded">
+                    {{ ssl_info.error }}
+                </div>
+            {% else %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="font-bold mb-2">Issuer</h3>
+                        <div class="bg-gray-50 p-3 rounded text-gray-600">
+                            {{ ssl_info.issuer }}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold mb-2">Expires</h3>
+                        <div class="bg-gray-50 p-3 rounded text-gray-600">
+                            {{ ssl_info.expires }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Related Domains Section (New) -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Related Domains</h2>
+            {% if related_domains %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 text-left">Domain</th>
+                                <th class="px-4 py-2 text-left">Relation Type</th>
+                                <th class="px-4 py-2 text-left">Confidence</th>
+                                <th class="px-4 py-2 text-left">Evidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for domain in related_domains %}
+                                <tr class="border-t">
+                                    <td class="px-4 py-2 font-medium">{{ domain.domain }}</td>
+                                    <td class="px-4 py-2 text-gray-600">{{ domain.relation_type }}</td>
+                                    <td class="px-4 py-2">
+                                        <span class="px-2 py-1 text-sm rounded
+                                            {% if domain.confidence == 'High' %}
+                                                bg-green-100 text-green-800
+                                            {% elif domain.confidence == 'Medium' %}
+                                                bg-yellow-100 text-yellow-800
+                                            {% else %}
+                                                bg-blue-100 text-blue-800
+                                            {% endif %}">
+                                            {{ domain.confidence }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-2 text-gray-600">{{ domain.evidence }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% for record_type, records in dns_info.items() %}
-                                    {% for record in records %}
-                                        <tr class="border-t">
-                                            <td class="px-4 py-2 font-medium">{{ record_type }}</td>
-                                            <td class="px-4 py-2 font-mono text-sm">{{ record }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-sm text-gray-600">
+                    <p>* Confidence levels indicate the reliability of the relationship between domains.</p>
+                    <p>* Evidence provides the basis for determining the relationship.</p>
+                </div>
+            {% else %}
+                <p class="text-gray-600">No related domains discovered.</p>
+            {% endif %}
+        </div>
+
+        <!-- Vulnerabilities Section -->
+        <!-- <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Security Findings</h2>
+            {% if vulnerabilities %}
+                {% for vuln in vulnerabilities %}
+                    <div class="mb-4 p-4 rounded
+                        {% if vuln.severity == 'High' %}
+                            bg-red-50 border-l-4 border-red-500
+                        {% elif vuln.severity == 'Medium' %}
+                            bg-yellow-50 border-l-4 border-yellow-500
+                        {% elif vuln.severity == 'Low' %}
+                            bg-blue-50 border-l-4 border-blue-500
+                        {% else %}
+                            bg-gray-50 border-l-4 border-gray-500
+                        {% endif %}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
+                            <span class="px-2 py-1 text-sm rounded
+                                {% if vuln.severity == 'High' %}
+                                    bg-red-100 text-red-800
+                                {% elif vuln.severity == 'Medium' %}
+                                    bg-yellow-100 text-yellow-800
+                                {% elif vuln.severity == 'Low' %}
+                                    bg-blue-100 text-blue-800
+                                {% else %}
+                                    bg-gray-100 text-gray-800
+                                {% endif %}">
+                                {{ vuln.severity }}
+                            </span>
+                        </div>
+                        <p class="mt-2 text-gray-600">{{ vuln.description }}</p>
                     </div>
-                {% else %}
-                    <p class="text-gray-500">No DNS information available.</p>
-                {% endif %}
-            </div>
-            
-            <!-- SSL Information -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4">SSL Certificate</h2>
-                
-                {% if ssl_info and 'error' not in ssl_info %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p><span class="font-medium">Issuer:</span> {{ ssl_info.issuer }}</p>
-                            <p><span class="font-medium">Valid From:</span> {{ ssl_info.valid_from }}</p>
-                            <p><span class="font-medium">Valid To:</span> {{ ssl_info.valid_to }}</p>
+                {% endfor %}
+            {% else %}
+                <div class="text-gray-600 bg-gray-50 p-4 rounded">
+                    No vulnerabilities detected.
+                </div>
+            {% endif %}
+        </div> -->
+
+        <!-- Vulnerabilities Section -->
+        <!-- Vulnerabilities Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Security Findings</h2>
+            {% if vulnerabilities %}
+                {% for vuln in vulnerabilities %}
+                    <div class="mb-4 p-4 rounded
+                        {% if vuln.severity == 'High' %}
+                            bg-red-50 border-l-4 border-red-500
+                        {% elif vuln.severity == 'Medium' %}
+                            bg-yellow-50 border-l-4 border-yellow-500
+                        {% elif vuln.severity == 'Low' %}
+                            bg-blue-50 border-l-4 border-blue-500
+                        {% else %}
+                            bg-gray-50 border-l-4 border-gray-500
+                        {% endif %}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
+                            <span class="px-2 py-1 text-sm rounded
+                                {% if vuln.severity == 'High' %}
+                                    bg-red-100 text-red-800
+                                {% elif vuln.severity == 'Medium' %}
+                                    bg-yellow-100 text-yellow-800
+                                {% elif vuln.severity == 'Low' %}
+                                    bg-blue-100 text-blue-800
+                                {% else %}
+                                    bg-gray-100 text-gray-800
+                                {% endif %}">
+                                {{ vuln.severity }}
+                            </span>
                         </div>
-                        <div>
-                            <p><span class="font-medium">Subject:</span> {{ ssl_info.subject }}</p>
-                            <p><span class="font-medium">Serial Number:</span> {{ ssl_info.serial_number }}</p>
-                            <p><span class="font-medium">Version:</span> {{ ssl_info.version }}</p>
-                        </div>
-                    </div>
-                    
-                    {% if ssl_info.san %}
-                        <div class="mt-4">
-                            <h3 class="font-medium mb-2">Subject Alternative Names:</h3>
-                            <div class="bg-gray-50 p-3 rounded-md">
-                                {% for name in ssl_info.san %}
-                                    <span class="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-sm mr-2 mb-2">{{ name }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                {% else %}
-                    <p class="text-gray-500">SSL information not available or could not be retrieved.</p>
-                {% endif %}
-            </div>
-            
-            <!-- Vulnerabilities -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4">Vulnerabilities</h2>
-                
-                {% if vulnerabilities %}
-                    <div class="space-y-4">
-                        {% for vuln in vulnerabilities %}
-                            <div class="border border-gray-200 rounded-md p-4 {% if vuln.severity == 'High' %}bg-red-50{% elif vuln.severity == 'Medium' %}bg-yellow-50{% else %}bg-blue-50{% endif %}">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-bold">{{ vuln.title }}</h3>
-                                    <span class="px-2 py-1 text-xs rounded-full 
-                                        {% if vuln.severity == 'High' %}bg-red-100 text-red-800{% elif vuln.severity == 'Medium' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-                                        {{ vuln.severity }}
-                                    </span>
-                                </div>
-                         <p class="mt-2 text-gray-600">
+                        <p class="mt-2 text-gray-600">
                             {# Splits de beschrijving op CVE-codes en vervang ze door hyperlinks #}
                             {% set description_parts = vuln.description.split('CVE-') %}
                             {{ description_parts[0] | safe }}
@@ -122,90 +208,54 @@
                                 {{ part.split(' ', 1)[1] if part.split(' ', 1)|length > 1 else '' | safe }}
                             {% endfor %}
                         </p>
-                            </div>
-                        {% endfor %}
                     </div>
-                {% else %}
-                    <p class="text-gray-500">No vulnerabilities found.</p>
-                {% endif %}
-            </div>
-            
-            <!-- Subdomains -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4">Subdomains</h2>
-                
-                {% if subdomains %}
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full table-auto">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="px-4 py-2 text-left">Subdomain</th>
-                                    <th class="px-4 py-2 text-left">IP Address</th>
-                                    <th class="px-4 py-2 text-left">Status</th>
+                {% endfor %}
+            {% else %}
+                <div class="text-gray-600 bg-gray-50 p-4 rounded">
+                    No vulnerabilities detected.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Subdomains Section -->
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Discovered Subdomains</h2>
+            {% if subdomains %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 text-left">Subdomain</th>
+                                <th class="px-4 py-2 text-left">IP Address</th>
+                                <th class="px-4 py-2 text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in subdomains %}
+                                <tr class="border-t">
+                                    <td class="px-4 py-2 font-medium">{{ sub.subdomain }}</td>
+                                    <td class="px-4 py-2 text-gray-600">{{ sub.ip }}</td>
+                                    <td class="px-4 py-2">
+                                        <span class="px-2 py-1 text-sm rounded
+                                            {% if sub.status == 'Active' %}
+                                                bg-green-100 text-green-800
+                                            {% else %}
+                                                bg-gray-100 text-gray-800
+                                            {% endif %}">
+                                            {{ sub.status }}
+                                        </span>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% for sub in subdomains %}
-                                    <tr class="border-t">
-                                        <td class="px-4 py-2 font-medium">{{ sub.subdomain }}</td>
-                                        <td class="px-4 py-2 font-mono text-sm">{{ sub.ip }}</td>
-                                        <td class="px-4 py-2">
-                                            <span class="px-2 py-1 text-xs rounded-full 
-                                                {% if sub.status == 'active' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                                                {{ sub.status }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <p class="text-gray-500">No subdomains found.</p>
-                {% endif %}
-            </div>
-            
-            <!-- Related Domains -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h2 class="text-xl font-bold mb-4">Related Domains</h2>
-                
-                {% if related_domains %}
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full table-auto">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="px-4 py-2 text-left">Domain</th>
-                                    <th class="px-4 py-2 text-left">Relation Type</th>
-                                    <th class="px-4 py-2 text-left">Confidence</th>
-                                    <th class="px-4 py-2 text-left">Evidence</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for related in related_domains %}
-                                    <tr class="border-t">
-                                        <td class="px-4 py-2 font-medium">{{ related.domain }}</td>
-                                        <td class="px-4 py-2">{{ related.relation_type }}</td>
-                                        <td class="px-4 py-2">
-                                            <span class="px-2 py-1 text-xs rounded-full 
-                                                {% if related.confidence|int >= 80 %}bg-green-100 text-green-800
-                                                {% elif related.confidence|int >= 50 %}bg-yellow-100 text-yellow-800
-                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                                {{ related.confidence }}%
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-2 text-sm">{{ related.evidence }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <p class="text-gray-500">No related domains found.</p>
-                {% endif %}
-            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-600">No subdomains discovered.</p>
+            {% endif %}
+        </div>
         {% endif %}
-        
-        <!-- Navigation Buttons -->
+
         <div class="mt-6">
             {% if batch_id %}
                 <a href="/batch_results/{{ batch_id }}" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
