@@ -311,28 +311,34 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                 print(f"Error using alternative CT log source: {str(e)}")
         
         # Process found domains from CT logs
+        to_remove = set()
         for found_domain in found_domains:
-            if found_domain != domain:
-                # Determine confidence based on relationship
-                if found_domain.endswith(f".{domain}"):
-                    found_domains.remove(found_domain)
-                else:
-                    similarity = SequenceMatcher(None, 
-                                tldextract.extract(found_domain).domain, 
-                                base_domain).ratio()
-                    if similarity > 0.8:
-                        confidence = "Medium"
-                        relation = "Similar Domain"
-                    else:
-                        confidence = "Low"
-                        relation = "Potentially Related Domain"
+            relation = "Unknown Relation"
+            confidence = "Unknown"
+            
+            if found_domain.endswith(f".{domain}"):
+                to_remove.add(found_domain)  # Voeg toe aan de lijst van te verwijderen items
+            else:
+                similarity = SequenceMatcher(None, 
+                            tldextract.extract(found_domain).domain, 
+                            base_domain).ratio()
                 
+                if similarity > 0.8:
+                    confidence = "Medium"
+                    relation = "Similar Domain"
+                else:
+                    confidence = "Low"
+                    relation = "Potentially Related Domain"
+            
                 related_domains.append({
                     'domain': found_domain,
                     'relation_type': relation,
                     'confidence': confidence,
                     'evidence': 'Found in Certificate Transparency logs'
                 })
+
+        # Verwijder de gemarkeerde items na de iteratie
+        found_domains -= to_remove
 
         # 6. Remove duplicates while preserving highest confidence
         seen_domains = {}
