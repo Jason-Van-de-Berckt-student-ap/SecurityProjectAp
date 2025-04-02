@@ -140,7 +140,7 @@ def darkweb_scan():
     try:
         if request.method == 'POST':
             links = request.form.get('onionlinks')
-            links=links[10:-1].split(',')
+            links=links[11:-2].split(',')
             print(f"Darkweb scan uitvoeren op {links}")
             # Perform darkweb scan using the provided links
             # Render template with results
