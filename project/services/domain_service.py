@@ -68,42 +68,12 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
         # Basic variations
         patterns.extend([
             f"{base_domain}-",
-            # f"{base_domain}_",
-            # f"{base_domain}.",
-            # f"{base_domain}dev",
-            # f"{base_domain}test",
-            # f"{base_domain}staging"
-            # f"www.{base_domain}",
-            # f"portal.{base_domain}",
-            # f"my{base_domain}",
-            # f"{base_domain} online",
-            # f"{base_domain}-secure",
-            # f"{base_domain} app",
-            # f"{base_domain} api",
-            # f"{base_domain} admin",
-            # f"{base_domain} login",
-            # f"{base_domain} mail",
-            # f"{base_domain} webmail",
-            # f"{base_domain} email",
-            # f"{base_domain} ftp",
-            # f"{base_domain} vpn",
-            # f"{base_domain} wiki",
-            # f"{base_domain} blog",
-            # f"{base_domain} forum",
-            # f"{base_domain} shop",
-            # f"{base_domain} store",
-            # f"{base_domain} support",
-            # f"{base_domain} help",
-            # f"{base_domain} contact"
         ])
         
         # Common corporate patterns
         if len(base_domain) > 1:  # Avoid too short names
             patterns.extend([
                 f"{base_domain[:3]}",  # First 3 chars
-                # f"{base_domain}-corp",
-                # f"{base_domain}-inc",
-                # f"{base_domain}-group"
             ])
         
         return patterns
