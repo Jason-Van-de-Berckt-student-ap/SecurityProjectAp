@@ -14,6 +14,7 @@ from services.ssl_service import get_ssl_info
 from services.vuln_service import check_vulnerabilities_alternative
 from services.subdomain_service import find_subdomains
 from services.domain_service import find_related_domains
+from services.Darkweb import check_ahmia
 from config import BRAVE_API_KEY
 
 # Create blueprint
@@ -34,7 +35,8 @@ def scan_domain():
         'ssl_scan': 'ssl_scan' in request.form,
         'subdomain_scan': 'subdomain_scan' in request.form,
         'related_domains': 'related_domains' in request.form,
-        'vuln_scan': 'vuln_scan' in request.form
+        'vuln_scan': 'vuln_scan' in request.form,
+        'darkweb':'darkweb' in request.form
     }
     
     # Initialize results dictionary
@@ -43,7 +45,8 @@ def scan_domain():
         'ssl_info': {},
         'vulnerabilities': [],
         'subdomains': [],
-        'related_domains': []
+        'related_domains': [],
+        'onlion_links': []
     }
     
     try:
@@ -67,6 +70,9 @@ def scan_domain():
         if scan_options['related_domains']:
             print(f"Starting related domain discovery for {domain}")
             results['related_domains'] = find_related_domains(domain, BRAVE_API_KEY)
+        if scan_options['darkweb']:
+            print(f"Darweb scan uitvoeren op {domain}")
+            results['onlion_links'] = check_ahmia(domain)
         
         # Store results in database
         conn = sqlite3.connect('easm.db')
