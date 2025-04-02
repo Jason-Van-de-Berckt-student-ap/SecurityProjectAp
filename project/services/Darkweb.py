@@ -1,6 +1,4 @@
 import requests
-import time
-import json
 from bs4 import BeautifulSoup
 
 # OUTPUT_FILE = "darkweb_results.json"  # JSON-bestand voor output
