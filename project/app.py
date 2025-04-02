@@ -28,7 +28,8 @@ def setup_database():
                   ssl_info TEXT,
                   vulnerabilities TEXT,
                   subdomains TEXT,
-                  related_domains TEXT)''')
+                  related_domains TEXT,
+                  onion_links TEXT)''')
     conn.commit()
     conn.close()
 

@@ -79,8 +79,8 @@ def scan_domain():
         c = conn.cursor()
         c.execute('''INSERT INTO scans 
                      (domain, scan_date, dns_records, ssl_info, vulnerabilities, 
-                      subdomains, related_domains)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                      subdomains, related_domains, onion_links)
+                     VALUES (?, ?, ?, ?, ?, ?, ?,?)''',
                   (domain, 
                    datetime.now(),
                    json.dumps(results['dns_info']),
@@ -88,7 +88,7 @@ def scan_domain():
                    json.dumps(results['vulnerabilities']),
                    json.dumps(results['subdomains']),
                    json.dumps(results['related_domains']),
-                   json.dump(results['onlion_links'])))
+                   json.dumps(results['onlion_links'])))
         conn.commit()
         conn.close()
         
@@ -119,7 +119,8 @@ def scan_domain():
                              ssl_info={'error': 'Scan failed'},
                              vulnerabilities=[],
                              subdomains=[],
-                             related_domains=[])
+                             related_domains=[],
+                             onionlinks=results['onlion_links'])
 
 @single_scan_bp.route('/download/<filename>')
 def download_batch_file(filename):
@@ -132,3 +133,21 @@ def download_batch_file(filename):
         return send_from_directory(file_path,filename, as_attachment=True)
     except Exception as e:
         return jsonify({'error': f'Error downloading file: {str(e)} {file_path}'}), 500
+    
+single_scan_bp.route('/darkweb/<onlion_links>')
+def darkweb_scan(onlion_links):
+    """Render the darkweb scan page."""
+    try:
+        # Perform darkweb scan using the provided links
+
+        results = onlion_links
+        # Render template with results
+        return render_template('darkweb.html', results=results)
+            
+        
+    except Exception as e:
+        # Log the error
+        print(f"Error during darkweb scan: {str(e)}")
+        
+        # Return error page or error message
+        return render_template('darkweb.html', error=str(e))
