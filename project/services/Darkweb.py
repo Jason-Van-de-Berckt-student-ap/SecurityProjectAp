@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 def is_valid_onion_link(link):
     return link.startswith("http://") or link.startswith("https://")
 
-# Controleer leaks op Ahmia (Dark Web zoekmachine)
+# Controleer leaks (Dark Web zoekmachine)
 def check_ahmia(domain):
     url = f"https://ahmia.fi/search/?q={domain}"
     headers = {"User-Agent": "DarkWebMonitorScript"}
