@@ -4,9 +4,16 @@ Vulnerability scanning service for the EASM application.
 import requests
 import concurrent.futures
 import nmap3
-from services.tech_detection_service import integrate_tech_vulnerabilities
+from config import NVD_gist_api_key
+from services.tech_detection_service import integrate_tech_vulnerabilities, format_results
 
 def check_vulnerabilities_alternative(domain):
+
+    api_key = NVD_gist_api_key
+    print(f"Scanning {domain} for technologies and vulnerabilities...")
+    results = integrate_tech_vulnerabilities(domain, api_key)
+    
+    print(format_results(results))
     """
     Check for common vulnerabilities in a domain.
     
@@ -92,6 +99,6 @@ def check_vulnerabilities_alternative(domain):
         executor.submit(check_open_ports, domain)
 
     # Integrate technology vulnerability scanning
-    vulnerabilities = integrate_tech_vulnerabilities(domain, vulnerabilities)
+    vulnerabilities = (domain)
 
     return vulnerabilities
