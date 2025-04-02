@@ -87,7 +87,8 @@ def scan_domain():
                    json.dumps(results['ssl_info']),
                    json.dumps(results['vulnerabilities']),
                    json.dumps(results['subdomains']),
-                   json.dumps(results['related_domains'])))
+                   json.dumps(results['related_domains']),
+                   json.dump(results['onlion_links'])))
         conn.commit()
         conn.close()
         
@@ -103,6 +104,7 @@ def scan_domain():
                              vulnerabilities=results['vulnerabilities'],
                              subdomains=results['subdomains'],
                              related_domains=results['related_domains'],
+                             onionlinks=results['onlion_links'],
                              csv_file=csv_file)
                              
     except Exception as e:
