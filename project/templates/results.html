@@ -257,12 +257,12 @@
         {% endif %}
 
         <div class="mt-6">
+            <a href="/darkweb" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
+                Dark Web Info
+            </a>
             {% if batch_id %}
                 <a href="/batch_results/{{ batch_id }}" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
                     ← Back to Batch Results
-                </a>
-                <a href="/darkweb" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
-                    Dark Web Info
                 </a>
             {% else %}
                 <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
