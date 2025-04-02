@@ -20,4 +20,4 @@ def check_ahmia(domain):
         results = soup.find_all("a", href=True)
         onion_links = [link["href"].split("redirect_url=")[-1] for link in results if ".onion" in link["href"]]
         other_data = [link["href"] for link in results if ".onion" not in link["href"]]
-        return {"Onion_links": onion_links}
+        return {'links':onion_links}

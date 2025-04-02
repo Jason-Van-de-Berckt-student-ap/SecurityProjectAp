@@ -134,17 +134,21 @@ def download_batch_file(filename):
     except Exception as e:
         return jsonify({'error': f'Error downloading file: {str(e)} {file_path}'}), 500
     
-single_scan_bp.route('/darkweb/<onlion_links>')
-def darkweb_scan(onlion_links):
+@single_scan_bp.route('/darkweb', methods=['GET', 'POST'])
+def darkweb_scan():
     """Render the darkweb scan page."""
     try:
-        # Perform darkweb scan using the provided links
-
-        results = onlion_links
-        # Render template with results
-        return render_template('darkweb.html', results=results)
+        if request.method == 'POST':
+            links = request.form.get('onionlinks')
+            links=links[10:-1].split(',')
+            print(f"Darkweb scan uitvoeren op {links}")
+            # Perform darkweb scan using the provided links
+            # Render template with results
+            return render_template('darkweb.html', result=links)
+        else:
+            # Handle GET request
+            return render_template('darkweb.html')
             
-        
     except Exception as e:
         # Log the error
         print(f"Error during darkweb scan: {str(e)}")
