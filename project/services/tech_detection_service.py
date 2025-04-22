@@ -19,73 +19,80 @@ def scan_website_technologies(domain):
     data = data.replace('+', '')
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     
-    response = requests.post(url, data=data, headers=headers)
-    loaded = json.loads(response.content)
-    
-    # Debug output
-    print("API Response:", loaded)
-    
-    # Check if 'apps' key exists and has content
-    if 'apps' not in loaded or not loaded['apps']:
-        print(f"Error: No 'apps' data found for {domain}")
-        return []
-        
-    # Parse apps data - it should already be a dictionary from json.loads
-    apps = loaded['apps']
-    
-    # Check if apps dictionary is empty
-    if not apps:
-        print(f"No technology data found for {domain}")
-        return []
-    
-    # Get the first key from apps
     try:
-        app_keys = list(apps.keys())
-        if not app_keys:  # Check if the list is empty
-            print(f"No app keys found for {domain}")
+        response = requests.post(url, data=data, headers=headers)
+        loaded = json.loads(response.content)
+        
+        # Debug output
+        print("API Response:", loaded)
+        
+        # Check if 'apps' key exists and has content
+        if 'apps' not in loaded or not loaded['apps']:
+            print(f"Error: No 'apps' data found for {domain}")
             return []
-        nuance = app_keys[0]  # Get the first key without removing it
-    except Exception as e:
-        print(f"Error accessing app keys: {e}")
-        return []
-
-    entries = []
-    try:
-        for app_type, values in apps[nuance].items():
-            if not values:  # Skip empty lists
-                continue
-                
-            for item in values:
-                # Safe conversion of timestamps with error handling
-                try:
-                    dt = datetime.datetime.fromtimestamp((item['detectedTime']/1000))
-                    ldt = datetime.datetime.fromtimestamp((item['latestDetectedTime']/1000))
-                except (KeyError, TypeError) as e:
-                    print(f"Error processing timestamps: {e}")
-                    dt = ldt = datetime.datetime.now()
-                    
-                version = item.get('version', 'N/A')
-                name = item.get('name', 'Unknown')
-                
-                entries.append({
-                    'Type': app_type, 
-                    'Name': name,
-                    'Detected': dt, 
-                    'Last_Detected': ldt, 
-                    'Version': version
-                })
-                print(f"Detected {app_type}: {name} (version: {version})")
-    except Exception as e:
-        print(f"Error processing app data: {e}")
-    
-    # Final verification
-    if not entries:
-        print("No technologies detected after processing")
-    else:
-        print(f"Successfully detected {len(entries)} technologies")
+            
+        # Parse apps data - it's a JSON string that needs to be parsed
+        try:
+            apps = json.loads(loaded['apps'])
+        except json.JSONDecodeError as e:
+            print(f"Error parsing apps JSON: {e}")
+            return []
         
-    return entries
+        # Check if apps dictionary is empty
+        if not apps:
+            print(f"No technology data found for {domain}")
+            return []
+        
+        # Get the first key from apps
+        try:
+            app_keys = list(apps.keys())
+            if not app_keys:  # Check if the list is empty
+                print(f"No app keys found for {domain}")
+                return []
+            nuance = app_keys[0]  # Get the first key without removing it
+        except Exception as e:
+            print(f"Error accessing app keys: {e}")
+            return []
 
+        entries = []
+        try:
+            for app_type, values in apps[nuance].items():
+                if not values:  # Skip empty lists
+                    continue
+                    
+                for item in values:
+                    # Safe conversion of timestamps with error handling
+                    try:
+                        dt = datetime.datetime.fromtimestamp((item['detectedTime']/1000))
+                        ldt = datetime.datetime.fromtimestamp((item['latestDetectedTime']/1000))
+                    except (KeyError, TypeError) as e:
+                        print(f"Error processing timestamps: {e}")
+                        dt = ldt = datetime.datetime.now()
+                        
+                    version = item.get('version', 'N/A')
+                    name = item.get('name', 'Unknown')
+                    
+                    entries.append({
+                        'Type': app_type, 
+                        'Name': name,
+                        'Detected': dt, 
+                        'Last_Detected': ldt, 
+                        'Version': version
+                    })
+                    print(f"Detected {app_type}: {name} (version: {version})")
+        except Exception as e:
+            print(f"Error processing app data: {e}")
+        
+        # Final verification
+        if not entries:
+            print("No technologies detected after processing")
+        else:
+            print(f"Successfully detected {len(entries)} technologies")
+            
+        return entries
+    except Exception as e:
+        print(f"Error in scan_website_technologies: {e}")
+        return []
 
 def search_nvd_by_technology(api_key, technology, version=None, max_results=100):
     """Search NVD database for vulnerabilities related to a specific technology."""
@@ -202,7 +209,6 @@ def search_nvd_by_technology(api_key, technology, version=None, max_results=100)
     print(f"Total vulnerabilities found: {len(all_vulnerabilities)}")
     return all_vulnerabilities
 
-
 def extract_vulnerability_info(vuln):
     """Extract relevant information from a vulnerability entry."""
     cve = vuln.get("cve", {})
@@ -238,7 +244,6 @@ def extract_vulnerability_info(vuln):
         "base_score": base_score,
         "severity": severity
     }
-
 
 def integrate_tech_vulnerabilities(domain, api_key, max_results=100):
     """Scan a domain for technologies and check them against NVD for vulnerabilities."""
@@ -279,7 +284,6 @@ def integrate_tech_vulnerabilities(domain, api_key, max_results=100):
         "technologies": entries,
         "vulnerabilities": all_vulnerabilities
     }
-
 
 def format_results(results):
     """Format the scan results for display."""
