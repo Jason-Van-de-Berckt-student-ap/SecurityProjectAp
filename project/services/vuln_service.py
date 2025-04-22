@@ -5,17 +5,50 @@ import requests
 import concurrent.futures
 import nmap3
 from config import NVD_gist_api_key
-from services.tech_detection_service import integrate_tech_vulnerabilities, format_results
+from services.tech_detection_service import integrate_tech_vulnerabilities, format_results, scan_website_technologies
 
 def check_vulnerabilities_alternative(domain):
+    """
+    Check for common vulnerabilities in a domain.
+    
+    Args:
+        domain: Domain name to scan
+        
+    Returns:
+        list: List of vulnerability dictionaries
+    """
     api_key = NVD_gist_api_key
     print(f"Scanning {domain} for technologies and vulnerabilities...")
-    results = integrate_tech_vulnerabilities(domain, api_key)
     
-    # Print technology scan results
-    print(format_results(results))
-    
+    # Initialize vulnerabilities list
     vulnerabilities = []
+    
+    # First, scan for technologies
+    tech_results = integrate_tech_vulnerabilities(domain, api_key)
+    print(format_results(tech_results))
+    
+    # Add technology information to vulnerabilities
+    if tech_results.get("status") == "success":
+        # Add detected technologies
+        for tech in tech_results.get("technologies", []):
+            vulnerabilities.append({
+                'title': f'Detected Technology: {tech["Name"]}',
+                'description': f'Type: {tech["Type"]}, Version: {tech["Version"]}, Last Detected: {tech["Last_Detected"]}',
+                'severity': 'Info',
+                'type': 'technology'
+            })
+        
+        # Add technology vulnerabilities
+        for tech, vulns in tech_results.get("vulnerabilities", {}).items():
+            for vuln in vulns:
+                vulnerabilities.append({
+                    'title': f'Technology Vulnerability: {tech}',
+                    'description': vuln.get("description", "No description available"),
+                    'severity': vuln.get("severity", "Unknown"),
+                    'cve_id': vuln.get("cve_id", "Unknown"),
+                    'base_score': vuln.get("base_score", "N/A"),
+                    'type': 'tech_vulnerability'
+                })
     
     def check_headers(domain):
         try:
@@ -35,7 +68,8 @@ def check_vulnerabilities_alternative(domain):
                     vulnerabilities.append({
                         'title': f'Missing {header}',
                         'description': message,
-                        'severity': 'Medium'
+                        'severity': 'Medium',
+                        'type': 'security_header'
                     })
             
             server = headers.get('Server', '')
@@ -43,20 +77,23 @@ def check_vulnerabilities_alternative(domain):
                 vulnerabilities.append({
                     'title': 'Server Version Disclosure',
                     'description': f'Server is revealing version information: {server}',
-                    'severity': 'Low'
+                    'severity': 'Low',
+                    'type': 'server_info'
                 })
                 
         except requests.exceptions.SSLError:
             vulnerabilities.append({
                 'title': 'SSL/TLS Issues',
                 'description': 'SSL/TLS connection failed',
-                'severity': 'High'
+                'severity': 'High',
+                'type': 'ssl_error'
             })
         except Exception as e:
             vulnerabilities.append({
                 'title': 'Connection Error',
                 'description': str(e),
-                'severity': 'Unknown'
+                'severity': 'Unknown',
+                'type': 'connection_error'
             })
 
     def check_open_ports(domain):
@@ -67,9 +104,12 @@ def check_vulnerabilities_alternative(domain):
             print(f"Error during scanning: {e}")
         if not result:
             print("No ports found, or there was an error in the nmap code.")
-            vulnerabilities.append({"title": "Port Scan Error", 
-                                   "description": "No open ports found, or there was an error in the nmap code.",
-                                   "severity": "Unknown"})
+            vulnerabilities.append({
+                "title": "Port Scan Error", 
+                "description": "No open ports found, or there was an error in the nmap code.",
+                "severity": "Unknown",
+                "type": "port_scan_error"
+            })
         else:
             for ip_address, details in result.items():
                 if not isinstance(details, dict) or 'ports' not in details:
@@ -81,7 +121,8 @@ def check_vulnerabilities_alternative(domain):
                         vulnerabilities.append({
                             'title': f'Open port {port["portid"]}',
                             'description': f'Port {port["portid"]} is open and might be vulnerable if not properly secured',
-                            'severity': 'Medium' if port["portid"] not in [80, 443] else 'Info'
+                            'severity': 'Medium' if port["portid"] not in [80, 443] else 'Info',
+                            'type': 'open_port'
                         })
                     else:
                         continue
@@ -94,25 +135,8 @@ def check_vulnerabilities_alternative(domain):
         ]
         concurrent.futures.wait(futures)
 
-    # Add technology vulnerabilities to the list
-    if results.get("status") == "success":
-        for tech, vulns in results.get("vulnerabilities", {}).items():
-            for vuln in vulns:
-                vulnerabilities.append({
-                    'title': f'Technology Vulnerability: {tech}',
-                    'description': vuln.get("description", "No description available"),
-                    'severity': vuln.get("severity", "Unknown"),
-                    'cve_id': vuln.get("cve_id", "Unknown"),
-                    'base_score': vuln.get("base_score", "N/A")
-                })
-
-    # Add technology information to the results
-    if results.get("status") == "success":
-        for tech in results.get("technologies", []):
-            vulnerabilities.append({
-                'title': f'Detected Technology: {tech["Name"]}',
-                'description': f'Type: {tech["Type"]}, Version: {tech["Version"]}, Last Detected: {tech["Last_Detected"]}',
-                'severity': 'Info'
-            })
+    # Sort vulnerabilities by severity
+    severity_order = {'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3, 'Info': 4, 'Unknown': 5}
+    vulnerabilities.sort(key=lambda x: severity_order.get(x.get('severity', 'Unknown'), 5))
 
     return vulnerabilities

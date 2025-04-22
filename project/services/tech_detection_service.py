@@ -90,41 +90,87 @@ def scan_website_technologies(domain):
 def search_nvd_by_technology(api_key, technology, version=None, max_results=100):
     """Search NVD database for vulnerabilities related to a specific technology."""
     base_url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
+    
+    # Check for missing version information
+    if not version or version == 'N/A':
+        warning_vuln = {
+            "cve": {
+                "id": "VERSION_UNKNOWN",
+                "descriptions": [{
+                    "lang": "en",
+                    "value": f"WARNING: No version information available for {technology}. "
+                            f"This technology may have known vulnerabilities, but without version information, "
+                            f"specific vulnerabilities cannot be determined. Please identify the version for a complete security assessment."
+                }],
+                "published": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "lastModified": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+            },
+            "metrics": {
+                "cvssMetricV31": [{
+                    "cvssData": {
+                        "baseScore": "UNKNOWN",
+                        "baseSeverity": "UNKNOWN"
+                    }
+                }]
+            }
+        }
+        print(f"\nWARNING: No version information available for {technology}")
+        return [warning_vuln]
+    
     all_vulnerabilities = []
     start_index = 0
     results_per_page = 20  # NVD API default
     
     # Refine search to include version if available
-    search_term = technology
-    if version and version != 'N/A':
-        search_term = f"{technology} {version}"
+    search_term = f"{technology} {version}"
     
-    print(f"Searching NVD for: {search_term}")
+    print(f"\nSearching NVD for: {search_term}")
     
     while len(all_vulnerabilities) < max_results:
+        print(f"\n=== Making request (start_index: {start_index}) ===")
+        
+        # Set up request parameters
         params = {
-            "apiKey": api_key,
             "keywordSearch": search_term,
             "resultsPerPage": min(results_per_page, max_results - len(all_vulnerabilities)),
             "startIndex": start_index
         }
 
+        # Set up headers with API key
+        headers = {
+            'Accept': 'application/json',
+            'apiKey': api_key
+        }
+
         try:
-            # Make the request
-            response = requests.get(base_url, params=params)
+            print("Making API request...")
+            response = requests.get(base_url, params=params, headers=headers)
+            
+            print(f"API Response Status Code: {response.status_code}")
+            print(f"API Response Headers: {dict(response.headers)}")
             
             # Check for rate limiting (403) or other errors
             if response.status_code == 403:
                 print("Rate limit reached. Waiting 30 seconds...")
+                print(f"Response Text: {response.text}")
                 time.sleep(30)
                 continue
+            elif response.status_code == 404:
+                print(f"No vulnerabilities found for {search_term}")
+                break
             elif response.status_code != 200:
                 print(f"Error: {response.status_code}")
-                print(response.text)
+                print(f"Response Text: {response.text}")
                 break
                 
             # Parse the response
+            print("\nParsing API response...")
             data = response.json()
+            
+            # Print full API response for debugging
+            print("\nFull API Response:")
+            print(json.dumps(data, indent=2))
+            
             vulnerabilities = data.get("vulnerabilities", [])
             total_results = data.get("totalResults", 0)
             
@@ -149,8 +195,11 @@ def search_nvd_by_technology(api_key, technology, version=None, max_results=100)
             
         except Exception as e:
             print(f"An error occurred: {e}")
+            print(f"Exception type: {type(e).__name__}")
             break
     
+    print(f"\n=== Search Complete ===")
+    print(f"Total vulnerabilities found: {len(all_vulnerabilities)}")
     return all_vulnerabilities
 
 
