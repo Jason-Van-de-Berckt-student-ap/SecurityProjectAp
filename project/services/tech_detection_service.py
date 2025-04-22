@@ -30,19 +30,15 @@ def scan_website_technologies(domain):
         print(f"Error: No 'apps' data found for {domain}")
         return []
         
-    # Safely parse apps data
-    try:
-        apps = ast.literal_eval(loaded['apps'])
-    except (SyntaxError, ValueError) as e:
-        print(f"Error parsing apps data: {e}")
-        return []
+    # Parse apps data - it should already be a dictionary from json.loads
+    apps = loaded['apps']
     
     # Check if apps dictionary is empty
     if not apps:
         print(f"No technology data found for {domain}")
         return []
     
-    # Safely get the first key from apps without using pop()
+    # Get the first key from apps
     try:
         app_keys = list(apps.keys())
         if not app_keys:  # Check if the list is empty

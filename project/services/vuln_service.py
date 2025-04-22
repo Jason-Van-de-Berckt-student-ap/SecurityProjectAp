@@ -8,21 +8,13 @@ from config import NVD_gist_api_key
 from services.tech_detection_service import integrate_tech_vulnerabilities, format_results
 
 def check_vulnerabilities_alternative(domain):
-
     api_key = NVD_gist_api_key
     print(f"Scanning {domain} for technologies and vulnerabilities...")
     results = integrate_tech_vulnerabilities(domain, api_key)
     
+    # Print technology scan results
     print(format_results(results))
-    """
-    Check for common vulnerabilities in a domain.
     
-    Args:
-        domain: Domain name to scan
-        
-    Returns:
-        list: List of vulnerability dictionaries
-    """
     vulnerabilities = []
     
     def check_headers(domain):
@@ -72,9 +64,9 @@ def check_vulnerabilities_alternative(domain):
         try:
             result = nmap.scan_top_ports(domain)
         except Exception as e:
-            print(f"/nfout tijdens het scannen: {e}")
+            print(f"Error during scanning: {e}")
         if not result:
-            print("Er zijn geen poorten gevonden, of er is een fout opgetreden.")
+            print("No ports found, or there was an error in the nmap code.")
             vulnerabilities.append({"title": "Port Scan Error", 
                                    "description": "No open ports found, or there was an error in the nmap code.",
                                    "severity": "Unknown"})
@@ -94,11 +86,33 @@ def check_vulnerabilities_alternative(domain):
                     else:
                         continue
 
+    # Run concurrent scans and wait for completion
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        executor.submit(check_headers, domain)
-        executor.submit(check_open_ports, domain)
+        futures = [
+            executor.submit(check_headers, domain),
+            executor.submit(check_open_ports, domain)
+        ]
+        concurrent.futures.wait(futures)
 
-    # Integrate technology vulnerability scanning
-    vulnerabilities = (domain)
+    # Add technology vulnerabilities to the list
+    if results.get("status") == "success":
+        for tech, vulns in results.get("vulnerabilities", {}).items():
+            for vuln in vulns:
+                vulnerabilities.append({
+                    'title': f'Technology Vulnerability: {tech}',
+                    'description': vuln.get("description", "No description available"),
+                    'severity': vuln.get("severity", "Unknown"),
+                    'cve_id': vuln.get("cve_id", "Unknown"),
+                    'base_score': vuln.get("base_score", "N/A")
+                })
+
+    # Add technology information to the results
+    if results.get("status") == "success":
+        for tech in results.get("technologies", []):
+            vulnerabilities.append({
+                'title': f'Detected Technology: {tech["Name"]}',
+                'description': f'Type: {tech["Type"]}, Version: {tech["Version"]}, Last Detected: {tech["Last_Detected"]}',
+                'severity': 'Info'
+            })
 
     return vulnerabilities
