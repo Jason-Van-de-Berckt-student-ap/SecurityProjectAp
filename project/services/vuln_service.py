@@ -30,17 +30,18 @@ def check_vulnerabilities_alternative(domain):
     # Add technology information to vulnerabilities
     if tech_results.get("status") == "success":
         # Add detected technologies
-        for tech in tech_results.get("technologies", []):
-            vulnerabilities.append({
-                'title': f'Detected Technology: {tech["Name"]}',
-                'description': f'Type: {tech["Type"]}, Version: {tech["Version"]}, Last Detected: {tech["Last_Detected"]}',
-                'severity': 'Info',
-                'type': 'technology'
-            })
-        
-        # Add technology vulnerabilities
         for tech, vulns in tech_results.get("vulnerabilities", {}).items():
+            if not vulns:
+                continue
+            try:
+                vulns.sort(key=lambda x: float(x.get("base_score")) if x.get("base_score") != "N/A" else 0, reverse=True)
+            except Exception as e:
+                print(f"Error sorting vulnerabilities: {e}")
             for vuln in vulns:
+                if vuln.get("cve_id") != "VERSION_UNKNOWN":
+                    vuln["description"] = ""
+                else:
+                    vuln["cve_id"] = ""
                 vulnerabilities.append({
                     'title': f'Technology Vulnerability: {tech}',
                     'description': vuln.get("description", "No description available"),
@@ -49,6 +50,9 @@ def check_vulnerabilities_alternative(domain):
                     'base_score': vuln.get("base_score", "N/A"),
                     'type': 'tech_vulnerability'
                 })
+        
+        # Add technology vulnerabilities
+
     
     def check_headers(domain):
         try:

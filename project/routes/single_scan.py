@@ -126,13 +126,18 @@ def scan_domain():
 def download_batch_file(filename):
     """Download a file from a specific batch directory."""
     try:
-        file_path = os.path.join('results')
-        if not os.path.exists(file_path):
+        # Ensure results directory exists
+        os.makedirs('results', exist_ok=True)
+        
+        # Get the absolute path to the results directory
+        file_path = os.path.abspath('results')
+        
+        if not os.path.exists(os.path.join(file_path, filename)):
             return jsonify({'error': f'File {filename} not found in {file_path}'}), 404
             
-        return send_from_directory(file_path,filename, as_attachment=True)
+        return send_from_directory(file_path, filename, as_attachment=True)
     except Exception as e:
-        return jsonify({'error': f'Error downloading file: {str(e)} {file_path}'}), 500
+        return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
     
 @single_scan_bp.route('/darkweb', methods=['GET', 'POST'])
 def darkweb_scan():
