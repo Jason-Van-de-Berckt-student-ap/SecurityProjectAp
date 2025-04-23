@@ -2,11 +2,9 @@
 Technology detection service for the EASM application.
 This integrates the enhanced technology detection capabilities.
 """
-import ast
 import datetime
 import time
 import json
-import sys
 import requests
 import urllib.parse
 from tabulate import tabulate
