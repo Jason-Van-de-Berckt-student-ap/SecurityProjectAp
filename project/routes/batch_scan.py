@@ -368,12 +368,20 @@ def download_batch_file(batch_id, filename):
     try:
         batch_dir = os.path.join('results', batch_id)
         if not os.path.exists(batch_dir):
+            print(f"Batch directory not found: {batch_dir}")
             return jsonify({'error': f'Batch {batch_id} not found'}), 404
             
         file_path = os.path.join(batch_dir, filename)
         if not os.path.exists(file_path):
+            print(f"File not found: {file_path}")
             return jsonify({'error': f'File {filename} not found in batch {batch_id}'}), 404
             
-        return send_from_directory(batch_dir, filename, as_attachment=True)
+        # Ensure the filename is secure
+        secure_filename(filename)
+        
+        # Use absolute path for send_from_directory
+        abs_batch_dir = os.path.abspath(batch_dir)
+        return send_from_directory(abs_batch_dir, filename, as_attachment=True)
     except Exception as e:
+        print(f"Error downloading file: {str(e)}")
         return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
