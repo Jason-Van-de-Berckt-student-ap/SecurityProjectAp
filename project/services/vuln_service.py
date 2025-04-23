@@ -60,76 +60,140 @@ def check_vulnerabilities_alternative(domain):
             headers = response.headers
             
             security_headers = {
-                'Strict-Transport-Security': 'HSTS not set',
-                'X-Content-Type-Options': 'No protection against MIME-type sniffing',
-                'X-Frame-Options': 'No protection against clickjacking',
-                'X-XSS-Protection': 'No XSS protection',
-                'Content-Security-Policy': 'No CSP policy'
+                'Strict-Transport-Security': {
+                    'message': 'HSTS not set. This header helps prevent protocol downgrade attacks and cookie hijacking.',
+                    'severity': 'High',
+                    'recommendation': 'Set HSTS header with max-age and includeSubDomains directive.'
+                },
+                'X-Content-Type-Options': {
+                    'message': 'No protection against MIME-type sniffing.',
+                    'severity': 'Medium',
+                    'recommendation': 'Set X-Content-Type-Options: nosniff'
+                },
+                'X-Frame-Options': {
+                    'message': 'No protection against clickjacking.',
+                    'severity': 'Medium',
+                    'recommendation': 'Set X-Frame-Options: DENY or SAMEORIGIN'
+                },
+                'X-XSS-Protection': {
+                    'message': 'No XSS protection.',
+                    'severity': 'Medium',
+                    'recommendation': 'Set X-XSS-Protection: 1; mode=block'
+                },
+                'Content-Security-Policy': {
+                    'message': 'No CSP policy.',
+                    'severity': 'High',
+                    'recommendation': 'Implement a strong Content Security Policy'
+                },
+                'Referrer-Policy': {
+                    'message': 'No Referrer-Policy set.',
+                    'severity': 'Low',
+                    'recommendation': 'Set Referrer-Policy to control referrer information'
+                },
+                'Permissions-Policy': {
+                    'message': 'No Permissions-Policy set.',
+                    'severity': 'Medium',
+                    'recommendation': 'Set Permissions-Policy to control browser features'
+                },
+                'Cache-Control': {
+                    'message': 'No Cache-Control header set.',
+                    'severity': 'Low',
+                    'recommendation': 'Set appropriate Cache-Control headers'
+                }
             }
             
-            for header, message in security_headers.items():
+            for header, info in security_headers.items():
                 if header not in headers:
                     vulnerabilities.append({
                         'title': f'Missing {header}',
-                        'description': message,
-                        'severity': 'Medium',
-                        'type': 'security_header'
+                        'description': info['message'],
+                        'severity': info['severity'],
+                        'type': 'security_header',
+                        'recommendation': info['recommendation']
                     })
             
+            # Check for server version disclosure
             server = headers.get('Server', '')
             if server:
                 vulnerabilities.append({
                     'title': 'Server Version Disclosure',
                     'description': f'Server is revealing version information: {server}',
                     'severity': 'Low',
-                    'type': 'server_info'
+                    'type': 'server_info',
+                    'recommendation': 'Remove or obfuscate server version information'
                 })
                 
         except requests.exceptions.SSLError:
             vulnerabilities.append({
                 'title': 'SSL/TLS Issues',
-                'description': 'SSL/TLS connection failed',
+                'description': 'SSL/TLS connection failed. This could indicate certificate problems or weak cipher suites.',
                 'severity': 'High',
-                'type': 'ssl_error'
+                'type': 'ssl_error',
+                'recommendation': 'Check SSL/TLS configuration and certificate validity'
+            })
+        except requests.exceptions.ConnectionError:
+            vulnerabilities.append({
+                'title': 'Connection Error',
+                'description': 'Could not establish connection to the server.',
+                'severity': 'High',
+                'type': 'connection_error',
+                'recommendation': 'Verify server is running and accessible'
             })
         except Exception as e:
             vulnerabilities.append({
-                'title': 'Connection Error',
-                'description': str(e),
+                'title': 'Header Check Error',
+                'description': f'Error checking security headers: {str(e)}',
                 'severity': 'Unknown',
-                'type': 'connection_error'
+                'type': 'header_check_error',
+                'recommendation': 'Check server configuration and try again'
             })
 
     def check_open_ports(domain):
         nmap = nmap3.NmapScanTechniques()
         try:
+            # First try a quick scan of common ports
             result = nmap.scan_top_ports(domain)
+            
+            # If quick scan succeeds, do a more detailed scan
+            if result:
+                detailed_result = nmap.scan_top_ports(domain, args="-sV -sS -T4")
+                
+                for ip_address, details in detailed_result.items():
+                    if not isinstance(details, dict) or 'ports' not in details:
+                        continue
+                        
+                    for port in details['ports']:
+                        if port['state'] == "open":
+                            # Get service information
+                            service = port.get('service', {})
+                            service_name = service.get('name', 'unknown')
+                            service_version = service.get('version', 'unknown')
+                            
+                            # Determine severity based on port and service
+                            severity = 'Info'
+                            if port['portid'] in ['21', '23', '3389']:  # FTP, Telnet, RDP
+                                severity = 'High'
+                            elif port['portid'] in ['22', '25', '1433', '3306', '5432']:  # SSH, SMTP, SQL
+                                severity = 'Medium'
+                            
+                            vulnerabilities.append({
+                                'title': f'Open Port {port["portid"]} ({service_name})',
+                                'description': f'Port {port["portid"]} is open running {service_name} {service_version}. ' +
+                                             f'This service should be properly secured and only exposed if necessary.',
+                                'severity': severity,
+                                'type': 'open_port',
+                                'port': port['portid'],
+                                'service': service_name,
+                                'version': service_version
+                            })
         except Exception as e:
-            print(f"Error during scanning: {e}")
-        if not result:
-            print("No ports found, or there was an error in the nmap code.")
+            print(f"Error during port scanning: {e}")
             vulnerabilities.append({
                 "title": "Port Scan Error", 
-                "description": "No open ports found, or there was an error in the nmap code.",
+                "description": f"Error during port scanning: {str(e)}",
                 "severity": "Unknown",
                 "type": "port_scan_error"
             })
-        else:
-            for ip_address, details in result.items():
-                if not isinstance(details, dict) or 'ports' not in details:
-                    continue
-                    
-                for port in details['ports']:
-                    print(port)
-                    if port['state'] == "open":
-                        vulnerabilities.append({
-                            'title': f'Open port {port["portid"]}',
-                            'description': f'Port {port["portid"]} is open and might be vulnerable if not properly secured',
-                            'severity': 'Medium' if port["portid"] not in [80, 443] else 'Info',
-                            'type': 'open_port'
-                        })
-                    else:
-                        continue
 
     # Run concurrent scans and wait for completion
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
