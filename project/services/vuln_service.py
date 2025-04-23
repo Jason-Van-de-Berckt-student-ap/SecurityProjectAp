@@ -41,7 +41,7 @@ def check_vulnerabilities_alternative(domain):
                 if vuln.get("cve_id") != "VERSION_UNKNOWN":
                     vuln["description"] = ""
                 else:
-                    vuln["cve_id"] = ""
+                    continue
                 vulnerabilities.append({
                     'title': f'Technology Vulnerability: {tech}',
                     'description': vuln.get("description", "No description available"),
