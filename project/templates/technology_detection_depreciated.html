@@ -42,13 +42,13 @@
                 {% if vulnerabilities %}
                     {% for vuln in vulnerabilities %}
                         <div class="mb-4 p-4 rounded
-                            {% if vuln.severity == 'Critical' %}
+                            {% if vuln.severity|lower == 'critical' %}
                                 bg-purple-50 border-l-4 border-purple-500
-                            {% elif vuln.severity == 'High' %}
+                            {% elif vuln.severity|lower == 'high' %}
                                 bg-red-50 border-l-4 border-red-500
-                            {% elif vuln.severity == 'Medium' %}
+                            {% elif vuln.severity|lower == 'medium' %}
                                 bg-yellow-50 border-l-4 border-yellow-500
-                            {% elif vuln.severity == 'Low' %}
+                            {% elif vuln.severity|lower == 'low' %}
                                 bg-blue-50 border-l-4 border-blue-500
                             {% else %}
                                 bg-gray-50 border-l-4 border-gray-500
@@ -56,13 +56,13 @@
                             <div class="flex justify-between items-start">
                                 <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
                                 <span class="px-2 py-1 text-sm rounded
-                                    {% if vuln.severity == 'Critical' %}
+                                    {% if vuln.severity|lower == 'critical' %}
                                         bg-purple-100 text-purple-800
-                                    {% elif vuln.severity == 'High' %}
+                                    {% elif vuln.severity|lower == 'high' %}
                                         bg-red-100 text-red-800
-                                    {% elif vuln.severity == 'Medium' %}
+                                    {% elif vuln.severity|lower == 'medium' %}
                                         bg-yellow-100 text-yellow-800
-                                    {% elif vuln.severity == 'Low' %}
+                                    {% elif vuln.severity|lower == 'low' %}
                                         bg-blue-100 text-blue-800
                                     {% else %}
                                         bg-gray-100 text-gray-800
