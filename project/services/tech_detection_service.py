@@ -26,9 +26,18 @@ def scan_website_technologies(domain):
         # Debug output
         print("API Response:", loaded)
         
+        # Check if response is valid
+        if not isinstance(loaded, dict):
+            print(f"Error: Invalid response format for {domain}")
+            return []
+            
         # Check if 'apps' key exists and has content
-        if 'apps' not in loaded or not loaded['apps']:
-            print(f"Error: No 'apps' data found for {domain}")
+        if 'apps' not in loaded:
+            print(f"Warning: No 'apps' data found for {domain}. This could mean the domain is not accessible or has no detectable technologies.")
+            return []
+            
+        if not loaded['apps']:
+            print(f"Warning: Empty 'apps' data for {domain}")
             return []
             
         # Parse apps data - it's a JSON string that needs to be parsed
@@ -90,6 +99,9 @@ def scan_website_technologies(domain):
             print(f"Successfully detected {len(entries)} technologies")
             
         return entries
+    except requests.exceptions.RequestException as e:
+        print(f"Network error while scanning {domain}: {e}")
+        return []
     except Exception as e:
         print(f"Error in scan_website_technologies: {e}")
         return []
