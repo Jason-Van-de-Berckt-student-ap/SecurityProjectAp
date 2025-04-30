@@ -80,10 +80,10 @@ def is_interested_link(link, domain):
     ]
     
     # Check each pattern and print if found
-    for pattern in interesting_patterns:
-        if pattern.lower() in clean_link.lower():
-            print(f"[DEBUG] Found matching pattern: {pattern}")
-            print(f"[DEBUG] Pattern '{pattern}' found in '{clean_link}'")
+    for keyword in interesting_patterns:
+        if keyword.lower() in clean_link.lower():
+            print(f"[DEBUG] Found matching pattern: {keyword}")
+            print(f"[DEBUG] Pattern '{keyword}' found in '{clean_link}'")
             return True
     
     print(f"[DEBUG] No matching patterns found in '{clean_link}'")
@@ -120,13 +120,11 @@ def check_ahmia(domain):
                             print(f"[DEBUG] Added to interested links: {onion_url}")
                         else:
                             other_links.append(onion_url)
-                            # print(f"[DEBUG] Found other onion link: {onion_url}")
                 except:
                     continue
         
         print(f"\n[DEBUG] Search complete. Found {len(interested_links)} interested links and {len(other_links)} other links")
         print("[DEBUG] Interested links:", interested_links)
-        # print("[DEBUG] Other links:", other_links)
         return {
             'interested_links': interested_links,
             'other_links': other_links
