@@ -71,7 +71,7 @@ def export_to_csv(scan_results, domain):
                            f"Type: {domain['relation_type']}, Evidence: {domain['evidence']}"])
         
         # Write onion links
-        for link in scan_results['onlion_links']:
+        for link in scan_results['onion_links']:
             writer.writerow(['Onion Link', link, ''])
 
     return filename

@@ -5,29 +5,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Darkweb Info</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 </head>
-<body>
-    {% block content %}
-        <div class="container mx-auto p-6">
-            <h1 class="text-2xl font-bold mb-4">Dark Web Links</h1>
-            
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Dark Web Links voor {{ domain }}</h1>
+
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-bold mb-4">Gevonden links</h2>
             {% if result %}
-                <table class="table-auto w-full border-collapse border border-gray-300">
-                    <tbody>
-                        {% for link in result %}
-                            <tr class="hover:bg-gray-100">
-                                <td class="border border-gray-300 px-4 py-2">{{ loop.index }}</td>
-                                <td class="border border-gray-300 px-4 py-2">
-                                    <a href="{{ link }}" class="text-blue-600 hover:underline" target="_blank">{{ link }}</a>
-                                </td>
+                <p class="mb-4 text-gray-700">Aantal gevonden links: <span class="font-bold">{{ result|length }}</span></p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-2 text-left">#</th>
+                                <th class="px-4 py-2 text-left">Onion Link</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for link in result %}
+                                <tr class="border-t">
+                                    <td class="px-4 py-2">{{ loop.index }}</td>
+                                    <td class="px-4 py-2">
+                                        <a href="{{ link }}" class="text-blue-600 hover:underline" target="_blank">{{ link }}</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
                 <p class="text-red-500">Geen onion links beschikbaar.</p>
             {% endif %}
         </div>
-    {% endblock %}
+    </div>
 </body>
 </html>

@@ -317,8 +317,9 @@
                 <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
                     ← Back to Scanner
                 </a>
-                <form action="/darkweb" method="POST" class="inline-block">
+                <form action="/darkweb" method="POST" class="inline-block" target="_blank">
                     <input type="hidden" name="onionlinks" value="{{ onionlinks }}">
+                    <input type="hidden" name="domain" value="{{ domain }}">
                     <button type="submit" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
                         Dark Web Info
                     </button>

@@ -46,7 +46,7 @@ def scan_domain():
         'vulnerabilities': [],
         'subdomains': [],
         'related_domains': [],
-        'onlion_links': []
+        'onion_links': []
     }
     
     try:
@@ -71,8 +71,8 @@ def scan_domain():
             print(f"Starting related domain discovery for {domain}")
             results['related_domains'] = find_related_domains(domain, BRAVE_API_KEY)
         if scan_options['darkweb']:
-            print(f"Darweb scan uitvoeren op {domain}")
-            results['onlion_links'] = check_ahmia(domain)
+            print(f"Darkweb scan uitvoeren op {domain}")
+            results['onion_links'] = check_ahmia(domain).get('links', [])
         
         # Store results in database
         conn = sqlite3.connect('easm.db')
@@ -88,7 +88,7 @@ def scan_domain():
                    json.dumps(results['vulnerabilities']),
                    json.dumps(results['subdomains']),
                    json.dumps(results['related_domains']),
-                   json.dumps(results['onlion_links'])))
+                   json.dumps(results['onion_links'])))
         conn.commit()
         conn.close()
         
@@ -104,7 +104,7 @@ def scan_domain():
                              vulnerabilities=results['vulnerabilities'],
                              subdomains=results['subdomains'],
                              related_domains=results['related_domains'],
-                             onionlinks=results['onlion_links'],
+                             onionlinks=results['onion_links'],
                              csv_file=csv_file)
                              
     except Exception as e:
@@ -120,7 +120,7 @@ def scan_domain():
                              vulnerabilities=[],
                              subdomains=[],
                              related_domains=[],
-                             onionlinks=results['onlion_links'])
+                             onionlinks=results['onion_links'])
 
 @single_scan_bp.route('/download/<filename>')
 def download_batch_file(filename):
@@ -144,19 +144,79 @@ def darkweb_scan():
     """Render the darkweb scan page."""
     try:
         if request.method == 'POST':
-            links = request.form.get('onionlinks')
-            links=links[11:-2].split(',')
-            print(f"Darkweb scan uitvoeren op {links}")
-            # Perform darkweb scan using the provided links
-            # Render template with results
-            return render_template('darkweb.html', result=links)
+            domain = request.form.get('domain', '')
+            # Haal de links op uit de database
+            conn = sqlite3.connect('easm.db')
+            c = conn.cursor()
+            c.execute('''SELECT onion_links
+                         FROM scans
+                         WHERE domain = ?
+                         ORDER BY scan_date DESC
+                         LIMIT 1''', (domain,))
+            row = c.fetchone()
+            conn.close()
+
+            if row:
+                links = json.loads(row[0])
+                print(f"Darkweb links voor {domain} uit database: {links}")  # Debug print
+                return render_template('darkweb.html', result=links, domain=domain)
+            else:
+                return render_template('darkweb.html', result=[], domain=domain)
         else:
-            # Handle GET request
-            return render_template('darkweb.html')
-            
+            domain = request.args.get('domain', '')
+            return render_template('darkweb.html', domain=domain)
     except Exception as e:
-        # Log the error
         print(f"Error during darkweb scan: {str(e)}")
-        
-        # Return error page or error message
-        return render_template('darkweb.html', error=str(e))
+        return render_template('darkweb.html', error=str(e), domain='')
+
+@single_scan_bp.route('/<path:domain>', methods=['GET'])
+def view_scan_results(domain):
+    """View the scan results for a specific domain (single scan)."""
+    try:
+        # Haal de meest recente scan op uit de database
+        conn = sqlite3.connect('easm.db')
+        c = conn.cursor()
+        c.execute('''SELECT dns_records, ssl_info, vulnerabilities, subdomains, related_domains, onion_links
+                     FROM scans
+                     WHERE domain = ?
+                     ORDER BY scan_date DESC
+                     LIMIT 1''', (domain,))
+        row = c.fetchone()
+        conn.close()
+
+        if not row:
+            return render_template('results.html',
+                                   domain=domain,
+                                   error="Geen scanresultaten gevonden voor dit domein.",
+                                   dns_info={},
+                                   ssl_info={'error': 'Geen data'},
+                                   vulnerabilities=[],
+                                   subdomains=[],
+                                   related_domains=[],
+                                   onionlinks=[])
+
+        dns_info = json.loads(row[0])
+        ssl_info = json.loads(row[1])
+        vulnerabilities = json.loads(row[2])
+        subdomains = json.loads(row[3])
+        related_domains = json.loads(row[4])
+        onionlinks = json.loads(row[5])
+
+        return render_template('results.html',
+                               domain=domain,
+                               dns_info=dns_info,
+                               ssl_info=ssl_info,
+                               vulnerabilities=vulnerabilities,
+                               subdomains=subdomains,
+                               related_domains=related_domains,
+                               onionlinks=onionlinks)
+    except Exception as e:
+        return render_template('results.html',
+                               domain=domain,
+                               error=str(e),
+                               dns_info={},
+                               ssl_info={'error': 'Scan failed'},
+                               vulnerabilities=[],
+                               subdomains=[],
+                               related_domains=[],
+                               onionlinks=[])

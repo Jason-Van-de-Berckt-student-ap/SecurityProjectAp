@@ -1,10 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
+import re
 
 # OUTPUT_FILE = "darkweb_results.json"  # JSON-bestand voor output
 
 def is_valid_onion_link(link):
-    return link.startswith("http://") or link.startswith("https://")
+    # Check if it's a valid onion link (should end with .onion)
+    # Accept both http:// and https:// links
+    onion_pattern = r'^[a-zA-Z0-9\-\.]+\.onion(/.*)?$'
+    return bool(re.match(onion_pattern, link))
 
 # Controleer leaks (Dark Web zoekmachine)
 def check_ahmia(domain):
@@ -16,5 +20,17 @@ def check_ahmia(domain):
     else:
         soup = BeautifulSoup(response.text, "html.parser")
         results = soup.find_all("a", href=True)
-        onion_links = [link["href"].split("redirect_url=")[-1] for link in results if ".onion" in link["href"]]
-        return {'links':onion_links}
+        onion_links = []
+        for link in results:
+            if ".onion" in link["href"]:
+                try:
+                    # Extract the actual onion URL from the redirect URL
+                    onion_url = link["href"].split("redirect_url=")[-1]
+                    # Remove any protocol (http:// or https://) for validation
+                    clean_url = re.sub(r'^https?://', '', onion_url)
+                    if is_valid_onion_link(clean_url):
+                        # Keep the original protocol (http:// or https://)
+                        onion_links.append(onion_url)
+                except:
+                    continue
+        return {'links': onion_links}
