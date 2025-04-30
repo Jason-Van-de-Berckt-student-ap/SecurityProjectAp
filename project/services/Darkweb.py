@@ -12,35 +12,6 @@ def is_valid_onion_link(link):
     onion_pattern = r'^[a-zA-Z0-9\-\.]+\.onion(/.*)?$'
     return bool(re.match(onion_pattern, link))
 
-def get_random_user_agent():
-    user_agents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-    ]
-    return random.choice(user_agents)
-
-def get_realistic_headers():
-    return {
-        'User-Agent': get_random_user_agent(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Cache-Control': 'max-age=0',
-        'sec-ch-ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'DNT': '1'
-    }
-
 def is_interested_link(link, domain):
     # Remove protocol and get the base part of the URL
     clean_link = re.sub(r'^https?://', '', link)
@@ -53,7 +24,7 @@ def is_interested_link(link, domain):
     print(f"[DEBUG] Domain base: {domain_base}")
     
     # Check for interesting patterns
-    interesting_patterns = [
+    interesting_keywords = [
         domain_base,  # Company name without TLD
         'admin',
         'login',
@@ -80,7 +51,7 @@ def is_interested_link(link, domain):
     ]
     
     # Check each pattern and print if found
-    for keyword in interesting_patterns:
+    for keyword in interesting_keywords:
         if keyword.lower() in clean_link.lower():
             print(f"[DEBUG] Found matching pattern: {keyword}")
             print(f"[DEBUG] Pattern '{keyword}' found in '{clean_link}'")
@@ -93,8 +64,7 @@ def is_interested_link(link, domain):
 def check_ahmia(domain):
     print(f"\n[DEBUG] Starting search for domain: {domain}")
     url = f"https://ahmia.fi/search/?q={domain}"
-    headers = get_realistic_headers()
-    response = requests.get(url, headers=headers)
+    response = requests.get(url)
     if response.status_code != 200:
         print(f"[DEBUG] Error accessing Ahmia: {response.status_code} - {response.text}")
         return {"Domein": domain, "Fout": f"{response.status_code} - {response.text}"}
