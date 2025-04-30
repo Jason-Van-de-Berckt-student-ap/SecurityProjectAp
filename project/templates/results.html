@@ -186,7 +186,7 @@
                 {% if port_vulns %}
                     {% for vuln in port_vulns %}
                         <div class="mb-4 p-4 rounded
-                            {% if vuln.severity|lower == critical %}
+                            {% if vuln.severity|lower == 'critical' %}
                                 bg-purple-50 border-l-4 border-purple-500
                             {% elif vuln.severity|lower == 'high' %}
                                 bg-red-50 border-l-4 border-red-500
@@ -200,7 +200,7 @@
                             <div class="flex justify-between items-start">
                                 <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
                                 <span class="px-2 py-1 text-sm rounded
-                                    {% if vuln.severity|lower == critical %}
+                                    {% if vuln.severity|lower == 'critical' %}
                                         bg-purple-100 text-purple-800
                                     {% elif vuln.severity|lower == 'high' %}
                                         bg-red-100 text-red-800
@@ -229,7 +229,7 @@
                 {% if header_vulns %}
                     {% for vuln in header_vulns %}
                         <div class="mb-4 p-4 rounded
-                            {% if vuln.severity|lower == critical %}
+                            {% if vuln.severity|lower == 'critical' %}
                                 bg-purple-50 border-l-4 border-purple-500
                             {% elif vuln.severity|lower == 'high' %}
                                 bg-red-50 border-l-4 border-red-500
@@ -243,7 +243,7 @@
                             <div class="flex justify-between items-start">
                                 <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
                                 <span class="px-2 py-1 text-sm rounded
-                                    {% if vuln.severity|lower == critical %}
+                                    {% if vuln.severity|lower == 'critical' %}
                                         bg-purple-100 text-purple-800
                                     {% elif vuln.severity|lower == 'high' %}
                                         bg-red-100 text-red-800
@@ -303,7 +303,6 @@
                 <p class="text-gray-600">No subdomains discovered.</p>
             {% endif %}
         </div>
-        {% endif %}
 
         <div class="mt-6">
             {% if batch_id %}
@@ -318,7 +317,6 @@
                     ← Back to Scanner
                 </a>
                 <form action="/darkweb" method="POST" class="inline-block" target="_blank">
-                    <input type="hidden" name="onionlinks" value="{{ onionlinks }}">
                     <input type="hidden" name="domain" value="{{ domain }}">
                     <button type="submit" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
                         Dark Web Info
@@ -326,6 +324,7 @@
                 </form>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 </body>
 </html>

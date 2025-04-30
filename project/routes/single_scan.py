@@ -46,7 +46,7 @@ def scan_domain():
         'vulnerabilities': [],
         'subdomains': [],
         'related_domains': [],
-        'onion_links': []
+        'onion_links': {'interested_links': [], 'other_links': []}
     }
     
     try:
@@ -70,9 +70,11 @@ def scan_domain():
         if scan_options['related_domains']:
             print(f"Starting related domain discovery for {domain}")
             results['related_domains'] = find_related_domains(domain, BRAVE_API_KEY)
+            
         if scan_options['darkweb']:
             print(f"Darkweb scan uitvoeren op {domain}")
-            results['onion_links'] = check_ahmia(domain).get('links', [])
+            darkweb_results = check_ahmia(domain)
+            results['onion_links'] = darkweb_results
         
         # Store results in database
         conn = sqlite3.connect('easm.db')
@@ -120,7 +122,7 @@ def scan_domain():
                              vulnerabilities=[],
                              subdomains=[],
                              related_domains=[],
-                             onionlinks=results['onion_links'])
+                             onionlinks={'interested_links': [], 'other_links': []})
 
 @single_scan_bp.route('/download/<filename>')
 def download_batch_file(filename):
@@ -159,9 +161,18 @@ def darkweb_scan():
             if row:
                 links = json.loads(row[0])
                 print(f"Darkweb links voor {domain} uit database: {links}")  # Debug print
-                return render_template('darkweb.html', result=links, domain=domain)
+                # Als de links al in het nieuwe formaat zijn, gebruik ze direct
+                if isinstance(links, dict) and 'interested_links' in links and 'other_links' in links:
+                    return render_template('darkweb.html', result=links, domain=domain)
+                # Anders, converteer de oude lijst naar het nieuwe formaat
+                else:
+                    # Voer de check_ahmia functie opnieuw uit om de links te categoriseren
+                    categorized_links = check_ahmia(domain)
+                    return render_template('darkweb.html', result=categorized_links, domain=domain)
             else:
-                return render_template('darkweb.html', result=[], domain=domain)
+                # Als er geen links in de database zijn, voer een nieuwe scan uit
+                categorized_links = check_ahmia(domain)
+                return render_template('darkweb.html', result=categorized_links, domain=domain)
         else:
             domain = request.args.get('domain', '')
             return render_template('darkweb.html', domain=domain)
@@ -193,7 +204,7 @@ def view_scan_results(domain):
                                    vulnerabilities=[],
                                    subdomains=[],
                                    related_domains=[],
-                                   onionlinks=[])
+                                   onionlinks={'interested_links': [], 'other_links': []})
 
         dns_info = json.loads(row[0])
         ssl_info = json.loads(row[1])
@@ -201,6 +212,15 @@ def view_scan_results(domain):
         subdomains = json.loads(row[3])
         related_domains = json.loads(row[4])
         onionlinks = json.loads(row[5])
+
+        # Controleer of onionlinks in het juiste formaat is
+        if not isinstance(onionlinks, dict) or 'interested_links' not in onionlinks or 'other_links' not in onionlinks:
+            # Converteer naar het nieuwe formaat als het een oude lijst is
+            if isinstance(onionlinks, list):
+                categorized_links = check_ahmia(domain)
+                onionlinks = categorized_links
+            else:
+                onionlinks = {'interested_links': [], 'other_links': []}
 
         return render_template('results.html',
                                domain=domain,
@@ -211,6 +231,7 @@ def view_scan_results(domain):
                                related_domains=related_domains,
                                onionlinks=onionlinks)
     except Exception as e:
+        print(f"Error in view_scan_results: {str(e)}")  # Debug print
         return render_template('results.html',
                                domain=domain,
                                error=str(e),
@@ -219,4 +240,4 @@ def view_scan_results(domain):
                                vulnerabilities=[],
                                subdomains=[],
                                related_domains=[],
-                               onionlinks=[])
+                               onionlinks={'interested_links': [], 'other_links': []})
