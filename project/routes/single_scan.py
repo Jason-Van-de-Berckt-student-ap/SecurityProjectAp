@@ -2,11 +2,13 @@
 Single domain scan routes for the EASM application.
 These routes handle individual domain scanning.
 """
-from flask import Blueprint, render_template, request, jsonify, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, send_file
 import json
 from datetime import datetime
 import sqlite3,os
 from pathlib import Path
+import csv
+import io
 
 # Import services
 from services.dns_service import get_dns_records
@@ -25,6 +27,57 @@ single_scan_bp = Blueprint('single_scan', __name__)
 def index():
     """Render the main index page with the scan form."""
     return render_template('index.html')
+
+@single_scan_bp.route('/history')
+def scan_history():
+    """Display the scan history page."""
+    try:
+        conn = sqlite3.connect('easm.db')
+        c = conn.cursor()
+        
+        # Get single scans
+        c.execute('''SELECT domain, scan_date, dns_records, ssl_info, 
+                            vulnerabilities, subdomains, related_domains, onion_links
+                     FROM scans 
+                     WHERE is_batch_scan = 0
+                     ORDER BY scan_date DESC''')
+        single_scans = []
+        for row in c.fetchall():
+            single_scans.append({
+                'domain': row[0],
+                'scan_date': row[1],
+                'dns_records': row[2],
+                'ssl_info': row[3],
+                'vulnerabilities': row[4],
+                'subdomains': row[5],
+                'related_domains': row[6],
+                'onion_links': row[7]
+            })
+        
+        # Get batch scans
+        c.execute('''SELECT batch_id, created_at, total_domains, completed_domains, status
+                     FROM batch_scans
+                     ORDER BY created_at DESC''')
+        batch_scans = []
+        for row in c.fetchall():
+            batch_scans.append({
+                'batch_id': row[0],
+                'created_at': row[1],
+                'total_domains': row[2],
+                'completed_domains': row[3],
+                'status': row[4]
+            })
+        
+        conn.close()
+        return render_template('history.html', 
+                             single_scans=single_scans,
+                             batch_scans=batch_scans)
+    except Exception as e:
+        print(f"Error retrieving scan history: {str(e)}")
+        return render_template('history.html', 
+                             single_scans=[],
+                             batch_scans=[],
+                             error=str(e))
 
 @single_scan_bp.route('/scan', methods=['POST'])
 def scan_domain():
@@ -180,14 +233,15 @@ def darkweb_scan():
         print(f"Error during darkweb scan: {str(e)}")
         return render_template('darkweb.html', error=str(e), domain='')
 
-@single_scan_bp.route('/<path:domain>', methods=['GET'])
+@single_scan_bp.route('/scan/<path:domain>')
 def view_scan_results(domain):
-    """View the scan results for a specific domain (single scan)."""
+    """View the scan results for a specific domain."""
     try:
-        # Haal de meest recente scan op uit de database
+        # Get the most recent scan from the database
         conn = sqlite3.connect('easm.db')
         c = conn.cursor()
-        c.execute('''SELECT dns_records, ssl_info, vulnerabilities, subdomains, related_domains, onion_links
+        c.execute('''SELECT scan_date, dns_records, ssl_info, vulnerabilities, 
+                            subdomains, related_domains, onion_links
                      FROM scans
                      WHERE domain = ?
                      ORDER BY scan_date DESC
@@ -197,25 +251,25 @@ def view_scan_results(domain):
 
         if not row:
             return render_template('results.html',
-                                   domain=domain,
-                                   error="Geen scanresultaten gevonden voor dit domein.",
-                                   dns_info={},
-                                   ssl_info={'error': 'Geen data'},
-                                   vulnerabilities=[],
-                                   subdomains=[],
-                                   related_domains=[],
-                                   onionlinks={'interested_links': [], 'other_links': []})
+                                domain=domain,
+                                error="No scan results found for this domain.",
+                                dns_info={},
+                                ssl_info={'error': 'No data'},
+                                vulnerabilities=[],
+                                subdomains=[],
+                                related_domains=[],
+                                onionlinks={'interested_links': [], 'other_links': []})
 
-        dns_info = json.loads(row[0])
-        ssl_info = json.loads(row[1])
-        vulnerabilities = json.loads(row[2])
-        subdomains = json.loads(row[3])
-        related_domains = json.loads(row[4])
-        onionlinks = json.loads(row[5])
+        scan_date = row[0]
+        dns_info = json.loads(row[1])
+        ssl_info = json.loads(row[2])
+        vulnerabilities = json.loads(row[3])
+        subdomains = json.loads(row[4])
+        related_domains = json.loads(row[5])
+        onionlinks = json.loads(row[6])
 
-        # Controleer of onionlinks in het juiste formaat is
+        # Check if onionlinks is in the correct format
         if not isinstance(onionlinks, dict) or 'interested_links' not in onionlinks or 'other_links' not in onionlinks:
-            # Converteer naar het nieuwe formaat als het een oude lijst is
             if isinstance(onionlinks, list):
                 categorized_links = check_ahmia(domain)
                 onionlinks = categorized_links
@@ -223,21 +277,103 @@ def view_scan_results(domain):
                 onionlinks = {'interested_links': [], 'other_links': []}
 
         return render_template('results.html',
-                               domain=domain,
-                               dns_info=dns_info,
-                               ssl_info=ssl_info,
-                               vulnerabilities=vulnerabilities,
-                               subdomains=subdomains,
-                               related_domains=related_domains,
-                               onionlinks=onionlinks)
+                            domain=domain,
+                            scan_date=scan_date,
+                            dns_info=dns_info,
+                            ssl_info=ssl_info,
+                            vulnerabilities=vulnerabilities,
+                            subdomains=subdomains,
+                            related_domains=related_domains,
+                            onionlinks=onionlinks)
     except Exception as e:
-        print(f"Error in view_scan_results: {str(e)}")  # Debug print
+        print(f"Error in view_scan_results: {str(e)}")
         return render_template('results.html',
-                               domain=domain,
-                               error=str(e),
-                               dns_info={},
-                               ssl_info={'error': 'Scan failed'},
-                               vulnerabilities=[],
-                               subdomains=[],
-                               related_domains=[],
-                               onionlinks={'interested_links': [], 'other_links': []})
+                            domain=domain,
+                            error=str(e),
+                            dns_info={},
+                            ssl_info={'error': 'Scan failed'},
+                            vulnerabilities=[],
+                            subdomains=[],
+                            related_domains=[],
+                            onionlinks={'interested_links': [], 'other_links': []})
+
+@single_scan_bp.route('/scan/<path:domain>/download')
+def download_scan_results(domain):
+    """Download the scan results for a specific domain as a CSV file."""
+    try:
+        # Get the most recent scan from the database
+        conn = sqlite3.connect('easm.db')
+        c = conn.cursor()
+        c.execute('''SELECT scan_date, dns_records, ssl_info, vulnerabilities, 
+                            subdomains, related_domains, onion_links
+                     FROM scans
+                     WHERE domain = ?
+                     ORDER BY scan_date DESC
+                     LIMIT 1''', (domain,))
+        row = c.fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({'error': 'No scan results found for this domain'}), 404
+
+        scan_date = row[0]
+        dns_info = json.loads(row[1])
+        ssl_info = json.loads(row[2])
+        vulnerabilities = json.loads(row[3])
+        subdomains = json.loads(row[4])
+        related_domains = json.loads(row[5])
+        onionlinks = json.loads(row[6])
+
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(['Category', 'Finding', 'Details'])
+        
+        # Write DNS records
+        for record_type, records in dns_info.items():
+            for record in records:
+                writer.writerow(['DNS Record', record_type, record])
+        
+        # Write SSL info
+        for key, value in ssl_info.items():
+            writer.writerow(['SSL Certificate', key, str(value)])
+        
+        # Write vulnerabilities
+        for vuln in vulnerabilities:
+            writer.writerow(['Vulnerability', 
+                           f"{vuln['title']} ({vuln['severity']})", 
+                           vuln['description']])
+        
+        # Write subdomains
+        for sub in subdomains:
+            writer.writerow(['Subdomain', 
+                           sub['subdomain'], 
+                           f"IP: {sub['ip']}, Status: {sub['status']}"])
+        
+        # Write related domains
+        for related in related_domains:
+            writer.writerow(['Related Domain',
+                           f"{related['domain']} ({related['confidence']})",
+                           f"Type: {related['relation_type']}, Evidence: {related['evidence']}"])
+        
+        # Write darkweb links
+        if isinstance(onionlinks, dict):
+            for link in onionlinks.get('interested_links', []):
+                writer.writerow(['Darkweb Link (Interesting)', link, ''])
+            for link in onionlinks.get('other_links', []):
+                writer.writerow(['Darkweb Link', link, ''])
+
+        # Prepare the response
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f'scan_results_{domain}_{scan_date}.csv'
+        )
+
+    except Exception as e:
+        print(f"Error in download_scan_results: {str(e)}")
+        return jsonify({'error': str(e)}), 500

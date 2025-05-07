@@ -106,6 +106,16 @@ def process_batch_validation():
     with open(os.path.join(batch_dir, 'options.json'), 'w') as f:
         json.dump(scan_options, f)
     
+    # Create batch record in database
+    conn = sqlite3.connect('easm.db')
+    c = conn.cursor()
+    c.execute('''INSERT INTO batch_scans 
+                 (batch_id, created_at, total_domains, status)
+                 VALUES (?, ?, ?, ?)''',
+              (batch_id, datetime.now(), len(domains), 'pending'))
+    conn.commit()
+    conn.close()
+    
     # Redirect to the batch results page
     return redirect(url_for('batch_scan.batch_results_view', batch_id=batch_id))
 
@@ -124,6 +134,8 @@ def process_batch(batch_id):
     
     # Process each domain
     all_results = {}
+    completed_domains = 0
+    
     for i, domain in enumerate(domains):
         try:
             print(f"Processing domain {i+1}/{len(domains)}: {domain}")
@@ -163,15 +175,29 @@ def process_batch(batch_id):
             c = conn.cursor()
             c.execute('''INSERT INTO scans 
                          (domain, scan_date, dns_records, ssl_info, vulnerabilities, 
-                          subdomains, related_domains)
-                         VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                          subdomains, related_domains, batch_id, is_batch_scan)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                       (domain, 
                        datetime.now(),
                        json.dumps(results['dns_info']),
                        json.dumps(results['ssl_info']),
                        json.dumps(results['vulnerabilities']),
                        json.dumps(results['subdomains']),
-                       json.dumps(results['related_domains'])))
+                       json.dumps(results['related_domains']),
+                       batch_id,
+                       1))
+            conn.commit()
+            
+            # Update batch progress
+            completed_domains += 1
+            c.execute('''UPDATE batch_scans 
+                         SET completed_domains = ?, 
+                             status = CASE 
+                                WHEN ? = total_domains THEN 'completed'
+                                ELSE 'in_progress'
+                             END
+                         WHERE batch_id = ?''',
+                      (completed_domains, completed_domains, batch_id))
             conn.commit()
             conn.close()
             
@@ -220,54 +246,28 @@ def process_batch(batch_id):
                 'status': 'error',
                 'error': str(e)
             }
+            
+            # Update batch progress even for failed scans
+            conn = sqlite3.connect('easm.db')
+            c = conn.cursor()
+            completed_domains += 1
+            c.execute('''UPDATE batch_scans 
+                         SET completed_domains = ?, 
+                             status = CASE 
+                                WHEN ? = total_domains THEN 'completed'
+                                ELSE 'in_progress'
+                             END
+                         WHERE batch_id = ?''',
+                      (completed_domains, completed_domains, batch_id))
+            conn.commit()
+            conn.close()
     
     # Save all results to a JSON file
     with open(os.path.join(batch_dir, 'all_results.json'), 'w') as f:
         json.dump(all_results, f)
     
-    # Create a combined CSV report
-    combined_csv = f'combined_results_{batch_id}.csv'
-    combined_csv_path = os.path.join(batch_dir, combined_csv)
-    
-    with open(combined_csv_path, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(['Domain', 'Category', 'Finding', 'Details'])
-        
-        for domain, domain_results in all_results.items():
-            if domain_results['status'] == 'completed':
-                results = domain_results['results']
-                
-                # Write DNS records
-                for record_type, records in results['dns_info'].items():
-                    for record in records:
-                        writer.writerow([domain, 'DNS Record', record_type, record])
-                
-                # Write vulnerabilities
-                for vuln in results['vulnerabilities']:
-                    writer.writerow([domain, 'Vulnerability', 
-                                   f"{vuln['title']} ({vuln['severity']})", 
-                                   vuln['description']])
-                
-                # Write subdomains
-                for sub in results['subdomains']:
-                    writer.writerow([domain, 'Subdomain', 
-                                   sub['subdomain'], 
-                                   f"IP: {sub['ip']}, Status: {sub['status']}"])
-                
-                # Write related domains
-                for related in results['related_domains']:
-                    writer.writerow([domain, 'Related Domain',
-                                   f"{related['domain']} ({related['confidence']})",
-                                   f"Type: {related['relation_type']}, Evidence: {related['evidence']}"])
-            else:
-                writer.writerow([domain, 'Error', domain_results['error'], ''])
-    
-    return render_template('batch_complete.html', 
-                         batch_id=batch_id, 
-                         results=all_results,
-                         total=len(domains),
-                         completed=len([d for d in all_results.values() if d['status'] == 'completed']),
-                         combined_csv=combined_csv)
+    return jsonify({'status': 'completed', 'batch_id': batch_id})
+
 @batch_scan_bp.route('/batch_results/<batch_id>')
 def batch_results_view(batch_id):
     """Display the batch results page for tracking scan progress."""
