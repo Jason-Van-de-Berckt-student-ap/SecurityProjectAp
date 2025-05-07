@@ -28,7 +28,7 @@
 
         <!-- Single Domain Scan Form -->
         <div id="single-scan" class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-            <form action="/scan" method="post">
+            <form id="scan-form" action="/scan" method="post">
                 <div class="mb-4">
                     <label for="domain" class="block text-gray-700 font-medium mb-2">Domain to Scan:</label>
                     <input type="text" 
@@ -75,6 +75,19 @@
                     Start Scan
                 </button>
             </form>
+            <!-- Loading Animation (verborgen tot submit) -->
+            <div id="scan-loading" class="hidden flex flex-col items-center justify-center min-h-[300px]">
+                <div class="mb-6">
+                    <svg class="animate-spin h-12 w-12 text-blue-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Domein wordt gescand...</h2>
+                <p class="text-gray-700 text-lg mb-1 text-center">Even geduld alstublieft...</p>
+                <p class="text-gray-500 text-center mb-4">De scan is bezig. Dit kan enkele seconden duren.</p>
+                <p class="text-gray-600 text-center">Tijd verstreken: <span id="scan-timer">00:00</span></p>
+            </div>
         </div>
 
         <!-- Batch Domain Scan Form -->
@@ -165,23 +178,51 @@
             document.getElementById('single-scan').classList.add('hidden');
             document.getElementById('batch-scan').classList.add('hidden');
             document.getElementById('batch-note').classList.add('hidden');
-            
             // Reset tab buttons
             document.getElementById('single-scan-tab').classList.remove('text-blue-500', 'border-b-2', 'border-blue-500');
             document.getElementById('single-scan-tab').classList.add('text-gray-500');
             document.getElementById('batch-scan-tab').classList.remove('text-blue-500', 'border-b-2', 'border-blue-500');
             document.getElementById('batch-scan-tab').classList.add('text-gray-500');
-            
             // Show selected tab
             document.getElementById(tabName).classList.remove('hidden');
             document.getElementById(tabName + '-tab').classList.remove('text-gray-500');
             document.getElementById(tabName + '-tab').classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
-            
             // Show batch note if batch tab is selected
             if (tabName === 'batch-scan') {
                 document.getElementById('batch-note').classList.remove('hidden');
             }
         }
+
+        // Reset loading state on page load (ook bij terug uit cache)
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.getElementById('scan-form');
+            var loading = document.getElementById('scan-loading');
+            if (form) form.classList.remove('hidden');
+            if (loading) loading.classList.add('hidden');
+            var timer = document.getElementById('scan-timer');
+            if (timer) timer.textContent = '00:00';
+        });
+
+        // Loading animatie bij submit
+        (function() {
+            var form = document.getElementById('scan-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Toon loading, verberg formulier
+                    document.getElementById('scan-loading').classList.remove('hidden');
+                    form.classList.add('hidden');
+                    // Start timer
+                    let startTime = new Date();
+                    let timerInterval = setInterval(function() {
+                        const now = new Date();
+                        const diff = now - startTime;
+                        const minutes = Math.floor(diff / 60000);
+                        const seconds = Math.floor((diff % 60000) / 1000);
+                        document.getElementById('scan-timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }, 1000);
+                });
+            }
+        })();
     </script>
 </body>
 </html>

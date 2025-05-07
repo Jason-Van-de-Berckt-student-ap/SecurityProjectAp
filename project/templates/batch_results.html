@@ -5,8 +5,51 @@
     <title>Batch Scan Processing</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+    <style>
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen" x-data="{ processing: false, completed: false }">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="background: rgba(120,120,120,0.4);" data-total="{{ total }}">
+        <div class="bg-white rounded-2xl shadow-xl p-10 flex flex-col items-center max-w-md w-full mx-4">
+            <div class="mb-6">
+                <svg class="animate-spin h-12 w-12 text-blue-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Batch scan bezig</h2>
+            <p class="text-gray-700 text-lg mb-1 text-center">Even geduld alstublieft...</p>
+            <p class="text-gray-500 text-center mb-4">De scan van alle domeinen is bezig. Dit kan enkele seconden duren.</p>
+            <p class="text-gray-600 text-center">Tijd verstreken: <span id="scan-timer">00:00</span></p>
+            <p class="text-gray-600 text-center mt-2">Voltooid: <span id="completed-count">{{ completed }}</span> / {{ total }}</p>
+        </div>
+    </div>
+
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold mb-4">Batch Scan Processing</h1>
         
@@ -100,6 +143,39 @@
     </div>
     
     <script>
+        // Timer functionality
+        let startTime = new Date();
+        let timerInterval;
+
+        function updateTimer() {
+            const now = new Date();
+            const diff = now - startTime;
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            document.getElementById('scan-timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Start the timer when the page loads
+        timerInterval = setInterval(updateTimer, 1000);
+
+        // Hide loading overlay when scan is complete
+        function checkCompletion() {
+            const completedCount = parseInt(document.getElementById('completed-count').textContent);
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const totalCount = parseInt(loadingOverlay.getAttribute('data-total'));
+            
+            if (completedCount === totalCount) {
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'none';
+                    clearInterval(timerInterval);
+                }
+            }
+        }
+
+        // Check completion status every 5 seconds
+        setInterval(checkCompletion, 5000);
+
         function startProcessing() {
             const batchId = '{{ batch_id }}';
             
