@@ -19,6 +19,10 @@ def is_valid_domain(domain):
     if not domain or len(domain) > 255:
         return False
     
+    # Reject domains that start with an asterisk
+    if domain.startswith('*'):
+        return False
+    
     # Regex pattern for domain validation
     pattern = r'^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
     return bool(re.match(pattern, domain))
@@ -98,6 +102,10 @@ def is_known_domain(domain, known_domains_file_path=None):
     Returns:
         bool: True if domain is known, False otherwise
     """
+    # Reject domains that start with an asterisk
+    if domain.startswith('*'):
+        return False
+        
     if known_domains_file_path is None:
         # Get the directory where this script is located
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -108,7 +116,7 @@ def is_known_domain(domain, known_domains_file_path=None):
         
     try:
         with open(known_domains_file_path, 'r') as f:
-            known_domains = {line.strip().lower() for line in f if line.strip()}
+            known_domains = {line.strip().lower() for line in f if line.strip() and not line.strip().startswith('*')}
             return domain.lower() in known_domains
     except Exception as e:
         print(f"Error reading known domains file: {str(e)}")

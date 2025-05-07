@@ -30,6 +30,26 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
     base_domain = tldextract.extract(domain).domain
     found_domains = set()
     
+    def is_subdomain(domain_to_check, original_domain):
+        """Check if a domain is a subdomain of the original domain or any domain in Domains.txt"""
+        # First check if it's a subdomain of the original domain
+        if domain_to_check.endswith(f".{original_domain}"):
+            return True
+            
+        # Then check if it's a subdomain of any domain in Domains.txt
+        try:
+            with open('Domains.txt', 'r') as f:
+                known_domains = {line.strip().lower() for line in f if line.strip()}
+                for known_domain in known_domains:
+                    if domain_to_check.endswith(f".{known_domain}"):
+                        return True
+        except FileNotFoundError:
+            print("Domains.txt file not found")
+        except Exception as e:
+            print(f"Error reading Domains.txt: {str(e)}")
+            
+        return False
+    
     def query_crt_sh(query, attempt=0):
         """Helper function to query crt.sh with retries"""
         try:
@@ -179,7 +199,9 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
         # 2. Check SSL certificate for related domains
         ssl_domains = find_domains_in_ssl_cert(domain)
         for ssl_domain in ssl_domains:
-            if ssl_domain != domain:
+            if (ssl_domain != domain and 
+                not ssl_domain.startswith('*') and 
+                not is_subdomain(ssl_domain, domain)):
                 related_domains.append({
                     'domain': ssl_domain,
                     'relation_type': 'SSL Certificate',
@@ -191,13 +213,14 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
         # 3. Analyze DNS TXT records
         txt_domains = analyze_dns_txt_records(domain)
         for txt_domain in txt_domains:
-            related_domains.append({
-                'domain': txt_domain,
-                'relation_type': 'DNS TXT Record',
-                'confidence': 'Medium',
-                'evidence': 'Found in SPF/DMARC records',
-                'category': 'Known' if is_known_domain(txt_domain) else 'Unknown'
-            })
+            if not txt_domain.startswith('*') and not is_subdomain(txt_domain, domain):
+                related_domains.append({
+                    'domain': txt_domain,
+                    'relation_type': 'DNS TXT Record',
+                    'confidence': 'Medium',
+                    'evidence': 'Found in SPF/DMARC records',
+                    'category': 'Known' if is_known_domain(txt_domain) else 'Unknown'
+                })
         
         # 4. Use Brave Search if API key is provided
         if brave_api_key:
@@ -218,8 +241,11 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                             if found_domain.startswith('www.'):
                                 found_domain = found_domain[4:]
                                 
-                            # Don't add the domain itself
-                            if found_domain != domain and found_domain not in [d['domain'] for d in related_domains]:
+                            # Don't add the domain itself, domains starting with *, or subdomains
+                            if (found_domain != domain and 
+                                not found_domain.startswith('*') and 
+                                not is_subdomain(found_domain, domain) and 
+                                found_domain not in [d['domain'] for d in related_domains]):
                                 # Check if this looks like a related domain
                                 extracted = tldextract.extract(found_domain)
                                 if extracted.domain and (
@@ -243,7 +269,7 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
             # Split on both newlines and commas
             for domain_part in re.split(r'[\n,]', name):
                 domain_part = domain_part.strip()
-                if domain_part and '*' not in domain_part:
+                if domain_part and not domain_part.startswith('*') and not is_subdomain(domain_part, domain):
                     found_domains.add(domain_part)
 
         if not found_domains:
@@ -254,7 +280,7 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                 name = entry.get('name_value', '').lower()
                 for domain_part in re.split(r'[\n,]', name):
                     domain_part = domain_part.strip()
-                    if domain_part and '*' not in domain_part:
+                    if domain_part and not domain_part.startswith('*') and not is_subdomain(domain_part, domain):
                         # Check if this is a potential related domain
                         extracted = tldextract.extract(domain_part)
                         if extracted.domain and domain_part.endswith(f".{domain}"):
@@ -279,7 +305,10 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                     for cert in data:
                         dns_names = cert.get('dns_names', [])
                         for dns_name in dns_names:
-                            if dns_name and dns_name != domain:
+                            if (dns_name and 
+                                dns_name != domain and 
+                                not dns_name.startswith('*') and 
+                                not is_subdomain(dns_name, domain)):
                                 found_domains.add(dns_name.lower())
             except Exception as e:
                 print(f"Error using alternative CT log source: {str(e)}")
@@ -287,30 +316,31 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
         # Process found domains from CT logs
         to_remove = set()
         for found_domain in found_domains:
+            if found_domain.startswith('*') or is_subdomain(found_domain, domain):
+                to_remove.add(found_domain)
+                continue
+                
             relation = "Unknown Relation"
             confidence = "Unknown"
             
-            if found_domain.endswith(f".{domain}"):
-                to_remove.add(found_domain)  # Voeg toe aan de lijst van te verwijderen items
-            else:
-                similarity = SequenceMatcher(None, 
-                            tldextract.extract(found_domain).domain, 
-                            base_domain).ratio()
-                
-                if similarity > 0.8:
-                    confidence = "Medium"
-                    relation = "Similar Domain"
-                else:
-                    confidence = "Low"
-                    relation = "Potentially Related Domain"
+            similarity = SequenceMatcher(None, 
+                        tldextract.extract(found_domain).domain, 
+                        base_domain).ratio()
             
-                related_domains.append({
-                    'domain': found_domain,
-                    'relation_type': relation,
-                    'confidence': confidence,
-                    'evidence': 'Found in Certificate Transparency logs',
-                    'category': 'Known' if is_known_domain(found_domain) else 'Unknown'
-                })
+            if similarity > 0.8:
+                confidence = "Medium"
+                relation = "Similar Domain"
+            else:
+                confidence = "Low"
+                relation = "Potentially Related Domain"
+        
+            related_domains.append({
+                'domain': found_domain,
+                'relation_type': relation,
+                'confidence': confidence,
+                'evidence': 'Found in Certificate Transparency logs',
+                'category': 'Known' if is_known_domain(found_domain) else 'Unknown'
+            })
 
         # Verwijder de gemarkeerde items na de iteratie
         found_domains -= to_remove
