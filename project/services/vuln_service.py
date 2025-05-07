@@ -56,7 +56,14 @@ def check_vulnerabilities_alternative(domain):
     
     def check_headers(domain):
         try:
-            response = requests.get(f'https://{domain}', timeout=5, verify=False)
+            # First try with SSL verification
+            try:
+                response = requests.get(f'https://{domain}', timeout=5, verify=True)
+            except requests.exceptions.SSLError:
+                # If SSL verification fails, try without it but log a warning
+                print(f"Warning: SSL verification failed for {domain}. Proceeding with unverified connection.")
+                response = requests.get(f'https://{domain}', timeout=5, verify=False)
+            
             headers = response.headers
             
             security_headers = {

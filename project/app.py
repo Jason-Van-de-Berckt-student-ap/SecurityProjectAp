@@ -4,12 +4,19 @@ EASM Application - External Attack Surface Management Tool
 This tool scans domains for DNS records, SSL certificates, vulnerabilities,
 subdomains, and related domains to help map the external attack surface.
 """
+import os
+import urllib3
 from flask import Flask
 import sqlite3
-import os
+from config import Config
+
+# Configure urllib3 to use system certificates
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+os.environ['REQUESTS_CA_BUNDLE'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cacert.pem')
 
 # Create Flask application
 app = Flask(__name__)
+app.config.from_object(Config)
 
 # Ensure required directories exist
 os.makedirs('uploads', exist_ok=True)
@@ -20,6 +27,8 @@ def setup_database():
     """Create the SQLite database and required tables if they don't exist."""
     conn = sqlite3.connect('easm.db')
     c = conn.cursor()
+    
+    # Create scans table with batch information
     c.execute('''CREATE TABLE IF NOT EXISTS scans
                  (id INTEGER PRIMARY KEY,
                   domain TEXT,
@@ -29,7 +38,18 @@ def setup_database():
                   vulnerabilities TEXT,
                   subdomains TEXT,
                   related_domains TEXT,
-                  onion_links TEXT)''')
+                  onion_links TEXT,
+                  batch_id TEXT,
+                  is_batch_scan BOOLEAN DEFAULT 0)''')
+    
+    # Create batch_scans table to track batch operations
+    c.execute('''CREATE TABLE IF NOT EXISTS batch_scans
+                 (batch_id TEXT PRIMARY KEY,
+                  created_at TIMESTAMP,
+                  total_domains INTEGER,
+                  completed_domains INTEGER DEFAULT 0,
+                  status TEXT DEFAULT 'pending')''')
+    
     conn.commit()
     conn.close()
 
