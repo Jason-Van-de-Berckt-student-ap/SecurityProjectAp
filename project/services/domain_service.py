@@ -11,6 +11,7 @@ import dns.resolver
 import requests
 from urllib.parse import urlparse
 from difflib import SequenceMatcher
+from .domain_utils import is_known_domain
 
 def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
     """
@@ -23,7 +24,7 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
         max_retries: Number of retries for failed requests
         
     Returns:
-        list: List of related domain dictionaries
+        list: List of related domain dictionaries with Known/Unknown categorization
     """
     related_domains = []
     base_domain = tldextract.extract(domain).domain
@@ -183,7 +184,8 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                     'domain': ssl_domain,
                     'relation_type': 'SSL Certificate',
                     'confidence': 'High',
-                    'evidence': 'Found in SSL certificate SAN'
+                    'evidence': 'Found in SSL certificate SAN',
+                    'category': 'Known' if is_known_domain(ssl_domain) else 'Unknown'
                 })
         
         # 3. Analyze DNS TXT records
@@ -193,7 +195,8 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                 'domain': txt_domain,
                 'relation_type': 'DNS TXT Record',
                 'confidence': 'Medium',
-                'evidence': 'Found in SPF/DMARC records'
+                'evidence': 'Found in SPF/DMARC records',
+                'category': 'Known' if is_known_domain(txt_domain) else 'Unknown'
             })
         
         # 4. Use Brave Search if API key is provided
@@ -228,7 +231,8 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                                         'domain': found_domain,
                                         'relation_type': 'Search Result',
                                         'confidence': 'Low',
-                                        'evidence': f'Found in Brave search results for "{domain}"'
+                                        'evidence': f'Found in Brave search results for "{domain}"',
+                                        'category': 'Known' if is_known_domain(found_domain) else 'Unknown'
                                     })
         # 5. Query Certificate Transparency logs
         print(f"Searching Certificate Transparency logs for {domain}")
@@ -304,7 +308,8 @@ def find_related_domains(domain, brave_api_key=None, timeout=15, max_retries=2):
                     'domain': found_domain,
                     'relation_type': relation,
                     'confidence': confidence,
-                    'evidence': 'Found in Certificate Transparency logs'
+                    'evidence': 'Found in Certificate Transparency logs',
+                    'category': 'Known' if is_known_domain(found_domain) else 'Unknown'
                 })
 
         # Verwijder de gemarkeerde items na de iteratie

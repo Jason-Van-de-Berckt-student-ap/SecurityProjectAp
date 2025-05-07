@@ -3,6 +3,7 @@ Domain utilities for the EASM application.
 """
 import re
 import csv
+import os
 from io import StringIO
 
 def is_valid_domain(domain):
@@ -85,3 +86,31 @@ def batch_domains(domains, batch_size=5):
         list: List of domain batches
     """
     return [domains[i:i + batch_size] for i in range(0, len(domains), batch_size)]
+
+def is_known_domain(domain, known_domains_file_path=None):
+    """
+    Checks if a domain exists in the known domains file.
+    
+    Args:
+        domain (str): The domain to check
+        known_domains_file_path (str): Path to the Domains.txt file
+        
+    Returns:
+        bool: True if domain is known, False otherwise
+    """
+    if known_domains_file_path is None:
+        # Get the directory where this script is located
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # Go up one level to the project directory
+        project_dir = os.path.dirname(current_dir)
+        # Construct the path to Domains.txt
+        known_domains_file_path = os.path.join(project_dir, 'Domains.txt')
+        
+    try:
+        with open(known_domains_file_path, 'r') as f:
+            known_domains = {line.strip().lower() for line in f if line.strip()}
+            return domain.lower() in known_domains
+    except Exception as e:
+        print(f"Error reading known domains file: {str(e)}")
+        print(f"Attempted to read from: {known_domains_file_path}")
+        return False

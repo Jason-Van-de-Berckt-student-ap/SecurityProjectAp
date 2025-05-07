@@ -1,15 +1,18 @@
 {# templates/results.html #}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Scan Results</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain Analysis Results</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-8">Scan Results for {{ domain }}</h1>
-		
-		{% if error %}
+        <h1 class="text-3xl font-bold mb-8">Domain Analysis Results for {{ domain }}</h1>
+
+        {% if error %}
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
                 <p class="font-bold">Error</p>
                 <p>{{ error }}</p>
@@ -33,336 +36,416 @@
                     </a>
                 {% endif %}
             </div>
-        
-        <!-- DNS Records Section -->
-        <div class="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 class="text-xl font-bold mb-4">DNS Records</h2>
-            {% for record_type, records in dns_info.items() %}
-                <div class="mb-4">
-                    <h3 class="font-bold text-gray-700">{{ record_type }}</h3>
-                    <ul class="list-disc pl-5">
-                    {% for record in records %}
-                        <li class="text-gray-600">{{ record }}</li>
-                    {% endfor %}
-                    </ul>
-                </div>
-            {% endfor %}
-        </div>
-        <!-- <div class="mt-4 flex space-x-4">
-            <a href="tech_detection?domain={{ domain }}" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 inline-flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clip-rule="evenodd" />
-                </svg>
-                View Technology Stack
-            </a>
-        </div> -->
-        <!-- SSL Certificate Section -->
-        <div class="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 class="text-xl font-bold mb-4">SSL Certificate</h2>
-            {% if 'error' in ssl_info %}
-                <div class="text-red-500 bg-red-50 p-3 rounded">
-                    {{ ssl_info.error }}
-                </div>
-            {% else %}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h3 class="font-bold mb-2">Issuer</h3>
-                        <div class="bg-gray-50 p-3 rounded text-gray-600">
-                            {{ ssl_info.issuer }}
+
+            <!-- DNS Records Section -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">DNS Records</h2>
+                {% for record_type, records in dns_info.items() %}
+                    <div class="mb-4">
+                        <h3 class="font-bold text-gray-700">{{ record_type }}</h3>
+                        <ul class="list-disc pl-5">
+                        {% for record in records %}
+                            <li class="text-gray-600">{{ record }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- SSL Certificate Section -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">SSL Certificate</h2>
+                {% if 'error' in ssl_info %}
+                    <div class="text-red-500 bg-red-50 p-3 rounded">
+                        {{ ssl_info.error }}
+                    </div>
+                {% else %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="font-bold mb-2">Issuer</h3>
+                            <div class="bg-gray-50 p-3 rounded text-gray-600">
+                                {{ ssl_info.issuer }}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold mb-2">Expires</h3>
+                            <div class="bg-gray-50 p-3 rounded text-gray-600">
+                                {{ ssl_info.expires }}
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <h3 class="font-bold mb-2">Expires</h3>
-                        <div class="bg-gray-50 p-3 rounded text-gray-600">
-                            {{ ssl_info.expires }}
-                        </div>
+                {% endif %}
+            </div>
+
+            <!-- Related Domains Section with Tabs -->
+            <div class="bg-white rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold p-6 pb-0">Related Domains</h2>
+                <!-- Tabs -->
+                <div class="border-b border-gray-200 px-6">
+                    <nav class="flex -mb-px">
+                        <button class="tab-button active px-6 py-3 text-blue-600 border-b-2 border-blue-600 font-medium text-sm" data-tab="known">
+                            Known Domains
+                            <span class="ml-2 bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs">
+                                {{ related_domains|selectattr('category', 'equalto', 'Known')|list|length }}
+                            </span>
+                        </button>
+                        <button class="tab-button px-6 py-3 text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm" data-tab="unknown">
+                            Unknown Domains
+                            <span class="ml-2 bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                                {{ related_domains|selectattr('category', 'equalto', 'Unknown')|list|length }}
+                            </span>
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="p-6">
+                    <!-- Known Domains Tab -->
+                    <div id="known" class="tab-content">
+                        {% set known_domains = related_domains|selectattr('category', 'equalto', 'Known')|list %}
+                        {% if known_domains %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-50">
+                                            <th class="px-4 py-2 text-left">#</th>
+                                            <th class="px-4 py-2 text-left">Domain</th>
+                                            <th class="px-4 py-2 text-left">Relation Type</th>
+                                            <th class="px-4 py-2 text-left">Confidence</th>
+                                            <th class="px-4 py-2 text-left">Evidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for result in known_domains %}
+                                            <tr class="border-t hover:bg-gray-50">
+                                                <td class="px-4 py-2">{{ loop.index }}</td>
+                                                <td class="px-4 py-2">
+                                                    <a href="https://{{ result.domain }}" class="text-blue-600 hover:underline" target="_blank">{{ result.domain }}</a>
+                                                </td>
+                                                <td class="px-4 py-2">{{ result.relation_type }}</td>
+                                                <td class="px-4 py-2">
+                                                    <span class="px-2 py-1 rounded-full text-xs
+                                                        {% if result.confidence == 'High' %}
+                                                            bg-green-100 text-green-800
+                                                        {% elif result.confidence == 'Medium' %}
+                                                            bg-yellow-100 text-yellow-800
+                                                        {% else %}
+                                                            bg-red-100 text-red-800
+                                                        {% endif %}">
+                                                        {{ result.confidence }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-2">{{ result.evidence }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500">No known domains found.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Unknown Domains Tab -->
+                    <div id="unknown" class="tab-content hidden">
+                        {% set unknown_domains = related_domains|selectattr('category', 'equalto', 'Unknown')|list %}
+                        {% if unknown_domains %}
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full table-auto">
+                                    <thead>
+                                        <tr class="bg-gray-50">
+                                            <th class="px-4 py-2 text-left">#</th>
+                                            <th class="px-4 py-2 text-left">Domain</th>
+                                            <th class="px-4 py-2 text-left">Relation Type</th>
+                                            <th class="px-4 py-2 text-left">Confidence</th>
+                                            <th class="px-4 py-2 text-left">Evidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for result in unknown_domains %}
+                                            <tr class="border-t hover:bg-gray-50">
+                                                <td class="px-4 py-2">{{ loop.index }}</td>
+                                                <td class="px-4 py-2">
+                                                    <a href="https://{{ result.domain }}" class="text-blue-600 hover:underline" target="_blank">{{ result.domain }}</a>
+                                                </td>
+                                                <td class="px-4 py-2">{{ result.relation_type }}</td>
+                                                <td class="px-4 py-2">
+                                                    <span class="px-2 py-1 rounded-full text-xs
+                                                        {% if result.confidence == 'High' %}
+                                                            bg-green-100 text-green-800
+                                                        {% elif result.confidence == 'Medium' %}
+                                                            bg-yellow-100 text-yellow-800
+                                                        {% else %}
+                                                            bg-red-100 text-red-800
+                                                        {% endif %}">
+                                                        {{ result.confidence }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-2">{{ result.evidence }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500">No unknown domains found.</p>
+                        {% endif %}
                     </div>
                 </div>
-            {% endif %}
-        </div>
-
-        <!-- Related Domains Section (New) -->
-        <div class="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 class="text-xl font-bold mb-4">Related Domains</h2>
-            {% if related_domains %}
-                <div class="overflow-x-auto">
-                    <table class="min-w-full table-auto">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="px-4 py-2 text-left">Domain</th>
-                                <th class="px-4 py-2 text-left">Relation Type</th>
-                                <th class="px-4 py-2 text-left">Confidence</th>
-                                <th class="px-4 py-2 text-left">Evidence</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for domain in related_domains %}
-                                <tr class="border-t">
-                                    <td class="px-4 py-2 font-medium">{{ domain.domain }}</td>
-                                    <td class="px-4 py-2 text-gray-600">{{ domain.relation_type }}</td>
-                                    <td class="px-4 py-2">
-                                        <span class="px-2 py-1 text-sm rounded
-                                            {% if domain.confidence == 'High' %}
-                                                bg-green-100 text-green-800
-                                            {% elif domain.confidence == 'Medium' %}
-                                                bg-yellow-100 text-yellow-800
-                                            {% else %}
-                                                bg-blue-100 text-blue-800
-                                            {% endif %}">
-                                            {{ domain.confidence }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-2 text-gray-600">{{ domain.evidence }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-4 text-sm text-gray-600">
-                    <p>* Confidence levels indicate the reliability of the relationship between domains.</p>
-                    <p>* Evidence provides the basis for determining the relationship.</p>
-                </div>
-            {% else %}
-                <p class="text-gray-600">No related domains discovered.</p>
-            {% endif %}
-        </div>
-
-        <!-- Vulnerabilities Section -->
-        <div class="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 class="text-xl font-bold mb-4">Security Findings</h2>
-            
-            <!-- Technology Vulnerabilities Section -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3">Technology Vulnerabilities</h3>
-                {% set tech_vulns = vulnerabilities|selectattr('type', 'equalto', 'tech_vulnerability')|list %}
-                {% if tech_vulns %}
-                    {% for vuln in tech_vulns %}
-                        <div class="mb-4 p-4 rounded
-                            {% if vuln.severity|lower == 'critical' %}
-                                bg-purple-50 border-l-4 border-purple-500
-                            {% elif vuln.severity|lower == 'high' %}
-                                bg-red-50 border-l-4 border-red-500
-                            {% elif vuln.severity|lower == 'medium' %}
-                                bg-yellow-50 border-l-4 border-yellow-500
-                            {% elif vuln.severity|lower == 'low' %}
-                                bg-blue-50 border-l-4 border-blue-500
-                            {% else %}
-                                bg-gray-50 border-l-4 border-gray-500
-                            {% endif %}">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
-                                <span class="px-2 py-1 text-sm rounded
-                                    {% if vuln.severity|lower == 'critical' %}
-                                        bg-purple-200 text-purple-1600
-                                    {% elif vuln.severity|lower == 'high' %}
-                                        bg-red-100 text-red-800
-                                    {% elif vuln.severity|lower == 'medium' %}
-                                        bg-yellow-100 text-yellow-800
-                                    {% elif vuln.severity|lower == 'low' %}
-                                        bg-blue-100 text-blue-800
-                                    {% else %}
-                                        bg-gray-100 text-gray-800
-                                    {% endif %}">
-                                    {{ vuln.severity }}
-                                </span>
-                            </div>
-                            <p class="mt-2 text-gray-600">
-                                {% if vuln.cve_id and vuln.cve_id != 'Unknown' %}
-                                    <a href="https://www.cvedetails.com/cve/{{ vuln.cve_id }}/" target="_blank" class="text-blue-500 hover:text-blue-700">{{ vuln.cve_id }}</a>
-                                {% endif %}
-                                {{ vuln.description | safe }}
-                            </p>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600">No technology vulnerabilities detected.</p>
-                {% endif %}
             </div>
 
-            <!-- Darkweb Links Section -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3">Darkweb Links</h3>
-                {% if onionlinks and (onionlinks.interested_links or onionlinks.other_links) %}
-                    {% if onionlinks.interested_links %}
-                        <div class="mb-4">
-                            <h4 class="font-medium text-red-600 mb-2">Potentially Relevant Links</h4>
-                            <div class="bg-red-50 p-4 rounded">
-                                <ul class="list-disc pl-5">
-                                    {% for link in onionlinks.interested_links %}
-                                        <li class="text-gray-700 mb-2">
-                                            <a href="{{ link }}" target="_blank" class="text-red-600 hover:text-red-800 break-all">{{ link }}</a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
+            <!-- Vulnerabilities Section -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">Security Findings</h2>
+                
+                <!-- Technology Vulnerabilities Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Technology Vulnerabilities</h3>
+                    {% set tech_vulns = vulnerabilities|selectattr('type', 'equalto', 'tech_vulnerability')|list %}
+                    {% if tech_vulns %}
+                        {% for vuln in tech_vulns %}
+                            <div class="mb-4 p-4 rounded
+                                {% if vuln.severity|lower == 'critical' %}
+                                    bg-purple-50 border-l-4 border-purple-500
+                                {% elif vuln.severity|lower == 'high' %}
+                                    bg-red-50 border-l-4 border-red-500
+                                {% elif vuln.severity|lower == 'medium' %}
+                                    bg-yellow-50 border-l-4 border-yellow-500
+                                {% elif vuln.severity|lower == 'low' %}
+                                    bg-blue-50 border-l-4 border-blue-500
+                                {% else %}
+                                    bg-gray-50 border-l-4 border-gray-500
+                                {% endif %}">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
+                                    <span class="px-2 py-1 text-sm rounded
+                                        {% if vuln.severity|lower == 'critical' %}
+                                            bg-purple-200 text-purple-1600
+                                        {% elif vuln.severity|lower == 'high' %}
+                                            bg-red-100 text-red-800
+                                        {% elif vuln.severity|lower == 'medium' %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% elif vuln.severity|lower == 'low' %}
+                                            bg-blue-100 text-blue-800
+                                        {% else %}
+                                            bg-gray-100 text-gray-800
+                                        {% endif %}">
+                                        {{ vuln.severity }}
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-gray-600">
+                                    {% if vuln.cve_id and vuln.cve_id != 'Unknown' %}
+                                        <a href="https://www.cvedetails.com/cve/{{ vuln.cve_id }}/" target="_blank" class="text-blue-500 hover:text-blue-700">{{ vuln.cve_id }}</a>
+                                    {% endif %}
+                                    {{ vuln.description | safe }}
+                                </p>
                             </div>
-                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-600">No technology vulnerabilities detected.</p>
                     {% endif %}
-                    
-                    {% if onionlinks.other_links %}
-                        <div class="mb-4">
-                            <h4 class="font-medium text-gray-600 mb-2">Other Links</h4>
-                            <div class="bg-gray-50 p-4 rounded">
-                                <ul class="list-disc pl-5">
-                                    {% for link in onionlinks.other_links %}
-                                        <li class="text-gray-700 mb-2">
-                                            <a href="{{ link }}" target="_blank" class="text-gray-600 hover:text-gray-800 break-all">{{ link }}</a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    {% endif %}
-                {% else %}
-                    <p class="text-gray-600">No darkweb links found.</p>
-                {% endif %}
-            </div>
-
-            <!-- Port Findings Section -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3">Open Ports</h3>
-                {% set port_vulns = vulnerabilities|selectattr('type', 'equalto', 'open_port')|list %}
-                {% if port_vulns %}
-                    {% for vuln in port_vulns %}
-                        <div class="mb-4 p-4 rounded
-                            {% if vuln.severity|lower == 'critical' %}
-                                bg-purple-50 border-l-4 border-purple-500
-                            {% elif vuln.severity|lower == 'high' %}
-                                bg-red-50 border-l-4 border-red-500
-                            {% elif vuln.severity|lower == 'medium' %}
-                                bg-yellow-50 border-l-4 border-yellow-500
-                            {% elif vuln.severity|lower == 'low' %}
-                                bg-blue-50 border-l-4 border-blue-500
-                            {% else %}
-                                bg-gray-50 border-l-4 border-gray-500
-                            {% endif %}">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
-                                <span class="px-2 py-1 text-sm rounded
-                                    {% if vuln.severity|lower == 'critical' %}
-                                        bg-purple-100 text-purple-800
-                                    {% elif vuln.severity|lower == 'high' %}
-                                        bg-red-100 text-red-800
-                                    {% elif vuln.severity|lower == 'medium' %}
-                                        bg-yellow-100 text-yellow-800
-                                    {% elif vuln.severity|lower == 'low' %}
-                                        bg-blue-100 text-blue-800
-                                    {% else %}
-                                        bg-gray-100 text-gray-800
-                                    {% endif %}">
-                                    {{ vuln.severity }}
-                                </span>
-                            </div>
-                            <p class="mt-2 text-gray-600">{{ vuln.description | safe }}</p>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600">No open ports detected.</p>
-                {% endif %}
-            </div>
-
-            <!-- Security Headers Section -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3">Security Headers</h3>
-                {% set header_vulns = vulnerabilities|selectattr('type', 'equalto', 'security_header')|list %}
-                {% if header_vulns %}
-                    {% for vuln in header_vulns %}
-                        <div class="mb-4 p-4 rounded
-                            {% if vuln.severity|lower == 'critical' %}
-                                bg-purple-50 border-l-4 border-purple-500
-                            {% elif vuln.severity|lower == 'high' %}
-                                bg-red-50 border-l-4 border-red-500
-                            {% elif vuln.severity|lower == 'medium' %}
-                                bg-yellow-50 border-l-4 border-yellow-500
-                            {% elif vuln.severity|lower == 'low' %}
-                                bg-blue-50 border-l-4 border-blue-500
-                            {% else %}
-                                bg-gray-50 border-l-4 border-gray-500
-                            {% endif %}">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
-                                <span class="px-2 py-1 text-sm rounded
-                                    {% if vuln.severity|lower == 'critical' %}
-                                        bg-purple-100 text-purple-800
-                                    {% elif vuln.severity|lower == 'high' %}
-                                        bg-red-100 text-red-800
-                                    {% elif vuln.severity|lower == 'medium' %}
-                                        bg-yellow-100 text-yellow-800
-                                    {% elif vuln.severity|lower == 'low' %}
-                                        bg-blue-100 text-blue-800
-                                    {% else %}
-                                        bg-gray-100 text-gray-800
-                                    {% endif %}">
-                                    {{ vuln.severity }}
-                                </span>
-                            </div>
-                            <p class="mt-2 text-gray-600">{{ vuln.description | safe }}</p>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="text-gray-600">All security headers are properly configured.</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Subdomains Section -->
-        <div class="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 class="text-xl font-bold mb-4">Discovered Subdomains</h2>
-            {% if subdomains %}
-                <div class="overflow-x-auto">
-                    <table class="min-w-full table-auto">
-                        <thead>
-                            <tr class="bg-gray-50">
-                                <th class="px-4 py-2 text-left">Subdomain</th>
-                                <th class="px-4 py-2 text-left">IP Address</th>
-                                <th class="px-4 py-2 text-left">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sub in subdomains %}
-                                <tr class="border-t">
-                                    <td class="px-4 py-2 font-medium">{{ sub.subdomain }}</td>
-                                    <td class="px-4 py-2 text-gray-600">{{ sub.ip }}</td>
-                                    <td class="px-4 py-2">
-                                        <span class="px-2 py-1 text-sm rounded
-                                            {% if sub.status == 'Active' %}
-                                                bg-green-100 text-green-800
-                                            {% else %}
-                                                bg-gray-100 text-gray-800
-                                            {% endif %}">
-                                            {{ sub.status }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
                 </div>
-            {% else %}
-                <p class="text-gray-600">No subdomains discovered.</p>
-            {% endif %}
-        </div>
 
-        <div class="mt-6">
-            {% if batch_id %}
-                <a href="/batch_results/{{ batch_id }}" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
-                    ← Back to Batch Results
-                </a>
-                <a href="/darkweb" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
-                    Dark Web Info
-                </a>
-            {% else %}
-                <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
-                    ← Back to Scanner
-                </a>
-                <form action="/darkweb" method="POST" class="inline-block" target="_blank">
-                    <input type="hidden" name="domain" value="{{ domain }}">
-                    <button type="submit" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
+                <!-- Darkweb Links Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Darkweb Links</h3>
+                    {% if onionlinks and (onionlinks.interested_links or onionlinks.other_links) %}
+                        {% if onionlinks.interested_links %}
+                            <div class="mb-4">
+                                <h4 class="font-medium text-red-600 mb-2">Potentially Relevant Links</h4>
+                                <div class="bg-red-50 p-4 rounded">
+                                    <ul class="list-disc pl-5">
+                                        {% for link in onionlinks.interested_links %}
+                                            <li class="text-gray-700 mb-2">
+                                                <a href="{{ link }}" target="_blank" class="text-red-600 hover:text-red-800 break-all">{{ link }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if onionlinks.other_links %}
+                            <div class="mb-4">
+                                <h4 class="font-medium text-gray-600 mb-2">Other Links</h4>
+                                <div class="bg-gray-50 p-4 rounded">
+                                    <ul class="list-disc pl-5">
+                                        {% for link in onionlinks.other_links %}
+                                            <li class="text-gray-700 mb-2">
+                                                <a href="{{ link }}" target="_blank" class="text-gray-600 hover:text-gray-800 break-all">{{ link }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-gray-600">No darkweb links found.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Port Findings Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Open Ports</h3>
+                    {% set port_vulns = vulnerabilities|selectattr('type', 'equalto', 'open_port')|list %}
+                    {% if port_vulns %}
+                        {% for vuln in port_vulns %}
+                            <div class="mb-4 p-4 rounded
+                                {% if vuln.severity|lower == 'critical' %}
+                                    bg-purple-50 border-l-4 border-purple-500
+                                {% elif vuln.severity|lower == 'high' %}
+                                    bg-red-50 border-l-4 border-red-500
+                                {% elif vuln.severity|lower == 'medium' %}
+                                    bg-yellow-50 border-l-4 border-yellow-500
+                                {% elif vuln.severity|lower == 'low' %}
+                                    bg-blue-50 border-l-4 border-blue-500
+                                {% else %}
+                                    bg-gray-50 border-l-4 border-gray-500
+                                {% endif %}">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
+                                    <span class="px-2 py-1 text-sm rounded
+                                        {% if vuln.severity|lower == 'critical' %}
+                                            bg-purple-100 text-purple-800
+                                        {% elif vuln.severity|lower == 'high' %}
+                                            bg-red-100 text-red-800
+                                        {% elif vuln.severity|lower == 'medium' %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% elif vuln.severity|lower == 'low' %}
+                                            bg-blue-100 text-blue-800
+                                        {% else %}
+                                            bg-gray-100 text-gray-800
+                                        {% endif %}">
+                                        {{ vuln.severity }}
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-gray-600">{{ vuln.description | safe }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-600">No open ports detected.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Security Headers Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Security Headers</h3>
+                    {% set header_vulns = vulnerabilities|selectattr('type', 'equalto', 'security_header')|list %}
+                    {% if header_vulns %}
+                        {% for vuln in header_vulns %}
+                            <div class="mb-4 p-4 rounded
+                                {% if vuln.severity|lower == 'critical' %}
+                                    bg-purple-50 border-l-4 border-purple-500
+                                {% elif vuln.severity|lower == 'high' %}
+                                    bg-red-50 border-l-4 border-red-500
+                                {% elif vuln.severity|lower == 'medium' %}
+                                    bg-yellow-50 border-l-4 border-yellow-500
+                                {% elif vuln.severity|lower == 'low' %}
+                                    bg-blue-50 border-l-4 border-blue-500
+                                {% else %}
+                                    bg-gray-50 border-l-4 border-gray-500
+                                {% endif %}">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-gray-800">{{ vuln.title }}</h3>
+                                    <span class="px-2 py-1 text-sm rounded
+                                        {% if vuln.severity|lower == 'critical' %}
+                                            bg-purple-100 text-purple-800
+                                        {% elif vuln.severity|lower == 'high' %}
+                                            bg-red-100 text-red-800
+                                        {% elif vuln.severity|lower == 'medium' %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% elif vuln.severity|lower == 'low' %}
+                                            bg-blue-100 text-blue-800
+                                        {% else %}
+                                            bg-gray-100 text-gray-800
+                                        {% endif %}">
+                                        {{ vuln.severity }}
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-gray-600">{{ vuln.description | safe }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-600">All security headers are properly configured.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Subdomains Section -->
+            <div class="bg-white p-6 rounded-lg shadow mb-6">
+                <h2 class="text-xl font-bold mb-4">Discovered Subdomains</h2>
+                {% if subdomains %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full table-auto">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="px-4 py-2 text-left">Subdomain</th>
+                                    <th class="px-4 py-2 text-left">IP Address</th>
+                                    <th class="px-4 py-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sub in subdomains %}
+                                    <tr class="border-t">
+                                        <td class="px-4 py-2 font-medium">{{ sub.subdomain }}</td>
+                                        <td class="px-4 py-2 text-gray-600">{{ sub.ip }}</td>
+                                        <td class="px-4 py-2">
+                                            <span class="px-2 py-1 text-sm rounded
+                                                {% if sub.status == 'Active' %}
+                                                    bg-green-100 text-green-800
+                                                {% else %}
+                                                    bg-gray-100 text-gray-800
+                                                {% endif %}">
+                                                {{ sub.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-600">No subdomains discovered.</p>
+                {% endif %}
+            </div>
+
+            <div class="mt-6">
+                {% if batch_id %}
+                    <a href="/batch_results/{{ batch_id }}" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
+                        ← Back to Batch Results
+                    </a>
+                    <a href="/darkweb" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
                         Dark Web Info
-                    </button>
-                </form>
-            {% endif %}
-        </div>
+                    </a>
+                {% else %}
+                    <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
+                        ← Back to Scanner
+                    </a>
+                    <form action="/darkweb" method="POST" class="inline-block" target="_blank">
+                        <input type="hidden" name="domain" value="{{ domain }}">
+                        <button type="submit" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 inline-block">
+                            Dark Web Info
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         {% endif %}
     </div>
+
+    <script>
+        $(document).ready(function() {
+            $('.tab-button').click(function() {
+                // Remove active class from all buttons
+                $('.tab-button').removeClass('active text-blue-600 border-blue-600').addClass('text-gray-500');
+                // Add active class to clicked button
+                $(this).addClass('active text-blue-600 border-blue-600').removeClass('text-gray-500');
+                
+                // Hide all tab content
+                $('.tab-content').addClass('hidden');
+                // Show selected tab content
+                $('#' + $(this).data('tab')).removeClass('hidden');
+            });
+        });
+    </script>
 </body>
 </html>
