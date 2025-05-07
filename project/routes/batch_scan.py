@@ -20,6 +20,7 @@ from services.ssl_service import get_ssl_info
 from services.vuln_service import check_vulnerabilities_alternative
 from services.subdomain_service import find_subdomains
 from services.domain_service import find_related_domains
+from services.Darkweb import check_ahmia
 from config import BRAVE_API_KEY
 
 # Import utilities
@@ -89,7 +90,8 @@ def process_batch_validation():
         'ssl_scan': 'ssl_scan' in request.form,
         'subdomain_scan': 'subdomain_scan' in request.form,
         'related_domains': 'related_domains' in request.form,
-        'vuln_scan': 'vuln_scan' in request.form
+        'vuln_scan': 'vuln_scan' in request.form,
+        'darkweb': 'darkweb' in request.form
     }
     
     # Create batch ID and directory
@@ -146,7 +148,8 @@ def process_batch(batch_id):
                 'ssl_info': {},
                 'vulnerabilities': [],
                 'subdomains': [],
-                'related_domains': []
+                'related_domains': [],
+                'onion_links': {'interested_links': [], 'other_links': []}
             }
             
             # Perform scans based on selected options
@@ -169,14 +172,18 @@ def process_batch(batch_id):
             if scan_options['related_domains']:
                 print(f"Starting related domain discovery for {domain}")
                 results['related_domains'] = find_related_domains(domain, BRAVE_API_KEY)
+                
+            if scan_options['darkweb']:
+                print(f"Starting darkweb scan for {domain}")
+                results['onion_links'] = check_ahmia(domain)
             
             # Store results in database
             conn = sqlite3.connect('easm.db')
             c = conn.cursor()
             c.execute('''INSERT INTO scans 
                          (domain, scan_date, dns_records, ssl_info, vulnerabilities, 
-                          subdomains, related_domains, batch_id, is_batch_scan)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                          subdomains, related_domains, onion_links, batch_id, is_batch_scan)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                       (domain, 
                        datetime.now(),
                        json.dumps(results['dns_info']),
@@ -184,6 +191,7 @@ def process_batch(batch_id):
                        json.dumps(results['vulnerabilities']),
                        json.dumps(results['subdomains']),
                        json.dumps(results['related_domains']),
+                       json.dumps(results['onion_links']),
                        batch_id,
                        1))
             conn.commit()
@@ -232,6 +240,13 @@ def process_batch(batch_id):
                     writer.writerow(['Related Domain',
                                    f"{related['domain']} ({related['confidence']})",
                                    f"Type: {related['relation_type']}, Evidence: {related['evidence']}"])
+                
+                # Write darkweb links
+                if scan_options['darkweb']:
+                    for link in results['onion_links'].get('interested_links', []):
+                        writer.writerow(['Darkweb Link (Interesting)', link, ''])
+                    for link in results['onion_links'].get('other_links', []):
+                        writer.writerow(['Darkweb Link', link, ''])
             
             # Store results for this domain
             all_results[domain] = {
@@ -266,7 +281,13 @@ def process_batch(batch_id):
     with open(os.path.join(batch_dir, 'all_results.json'), 'w') as f:
         json.dump(all_results, f)
     
-    return jsonify({'status': 'completed', 'batch_id': batch_id})
+    # Return the complete results page instead of just a status
+    return render_template('batch_complete.html',
+                         batch_id=batch_id,
+                         results=all_results,
+                         total=len(domains),
+                         completed=completed_domains,
+                         combined_csv=f'combined_results_{batch_id}.csv')
 
 @batch_scan_bp.route('/batch_results/<batch_id>')
 def batch_results_view(batch_id):
@@ -341,6 +362,7 @@ def view_batch_results(domain):
                                 vulnerabilities=results['vulnerabilities'],
                                 subdomains=results['subdomains'],
                                 related_domains=results['related_domains'],
+                                onionlinks=results['onion_links'],
                                 csv_file=domain_results.get('csv_file', ''),
                                 batch_id=batch_id)
         else:
@@ -351,7 +373,8 @@ def view_batch_results(domain):
                                 ssl_info={'error': 'Scan failed'},
                                 vulnerabilities=[],
                                 subdomains=[],
-                                related_domains=[])
+                                related_domains=[],
+                                onionlinks={'interested_links': [], 'other_links': []})
     except Exception as e:
         return render_template('results.html',
                             domain=domain,
@@ -360,7 +383,8 @@ def view_batch_results(domain):
                             ssl_info={'error': 'Scan failed'},
                             vulnerabilities=[],
                             subdomains=[],
-                            related_domains=[])
+                            related_domains=[],
+                            onionlinks={'interested_links': [], 'other_links': []})
 
 @batch_scan_bp.route('/download/<batch_id>/<filename>')
 def download_batch_file(batch_id, filename):

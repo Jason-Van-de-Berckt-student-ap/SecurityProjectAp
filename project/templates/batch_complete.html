@@ -65,15 +65,21 @@
                                         {% set vuln_count = domain_results.results.vulnerabilities|length %}
                                         {% set sub_count = domain_results.results.subdomains|length %}
                                         {% set rel_count = domain_results.results.related_domains|length %}
+                                        {% set darkweb_count = domain_results.results.onion_links.interested_links|length + domain_results.results.onion_links.other_links|length %}
                                         <span class="inline-flex items-center px-2 py-1 mr-2 text-xs bg-red-50 text-red-700 rounded">
                                             {{ vuln_count }} Vulnerabilities
                                         </span>
                                         <span class="inline-flex items-center px-2 py-1 mr-2 text-xs bg-blue-50 text-blue-700 rounded">
                                             {{ sub_count }} Subdomains
                                         </span>
-                                        <span class="inline-flex items-center px-2 py-1 text-xs bg-purple-50 text-purple-700 rounded">
+                                        <span class="inline-flex items-center px-2 py-1 mr-2 text-xs bg-purple-50 text-purple-700 rounded">
                                             {{ rel_count }} Related Domains
                                         </span>
+                                        {% if darkweb_count > 0 %}
+                                        <span class="inline-flex items-center px-2 py-1 text-xs bg-gray-50 text-gray-700 rounded">
+                                            {{ darkweb_count }} Darkweb Links
+                                        </span>
+                                        {% endif %}
                                     {% else %}
                                         {{ domain_results.error }}
                                     {% endif %}
