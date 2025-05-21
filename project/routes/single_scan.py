@@ -28,6 +28,35 @@ def index():
     """Render the main index page with the scan form."""
     return render_template('index.html')
 
+@single_scan_bp.route('/critical_high_cves')
+def critical_high_cves():
+    """Toon alle domeinen met minstens één Critical of High CVE (ook uit batch scans)."""
+    conn = sqlite3.connect('easm.db')
+    c = conn.cursor()
+    c.execute('''SELECT domain, scan_date, vulnerabilities
+                 FROM scans
+                 ORDER BY scan_date DESC''')  # Verwijder WHERE is_batch_scan = 0
+    domains_with_cves = []
+    for row in c.fetchall():
+        domain = row[0]
+        scan_date = row[1]
+        try:
+            vulns = json.loads(row[2])
+        except Exception:
+            continue
+        cve_vulns = [
+            v for v in vulns
+            if v.get('type') == 'tech_vulnerability' and v.get('severity', '').lower() in ('critical', 'high')
+        ]
+        if cve_vulns:
+            domains_with_cves.append({
+                'domain': domain,
+                'scan_date': scan_date,
+                'vulnerabilities': cve_vulns
+            })
+    conn.close()
+    return render_template('critical_high_cves.html', domains=domains_with_cves)
+
 @single_scan_bp.route('/history')
 def scan_history():
     """Display the scan history page."""

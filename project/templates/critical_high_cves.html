@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Critical/High CVE's per domein</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6">Domeinen met Critical/High CVE's</h1>
+        {% if domains %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <table class="min-w-full table-auto">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-4 py-2 text-left">Domain</th>
+                            <th class="px-4 py-2 text-left">Scan Date</th>
+                            <th class="px-4 py-2 text-left">CVE</th>
+                            <th class="px-4 py-2 text-left">Severity</th>
+                            <th class="px-4 py-2 text-left">Beschrijving</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in domains %}
+                            {% for vuln in item.vulnerabilities %}
+                                <tr class="border-t">
+                                    <td class="px-4 py-2">{{ item.domain }}</td>
+                                    <td class="px-4 py-2">{{ item.scan_date }}</td>
+                                    <td class="px-4 py-2">
+                                        {% if vuln.cve_id and vuln.cve_id != 'Unknown' %}
+                                            <a href="https://www.cvedetails.com/cve/{{ vuln.cve_id }}/" target="_blank" class="text-blue-500 hover:underline">{{ vuln.cve_id }}</a>
+                                        {% else %}
+                                            Onbekend
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-4 py-2 font-bold {% if vuln.severity|lower == 'critical' %}text-purple-700{% else %}text-red-700{% endif %}">
+                                        {{ vuln.severity }}
+                                    </td>
+                                    <td class="px-4 py-2">{{ vuln.description }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-md p-6 text-gray-600">
+                Geen domeinen met Critical of High CVE's gevonden.
+            </div>
+        {% endif %}
+        <div class="mt-6">
+            <a href="{{ url_for('single_scan.scan_history') }}" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
+                ← Terug naar Scan History
+            </a>
+        </div>
+    </div>
+</body>
+</html>
