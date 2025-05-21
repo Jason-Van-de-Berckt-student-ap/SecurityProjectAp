@@ -36,6 +36,7 @@ def critical_high_cves():
     c.execute('''SELECT domain, scan_date, vulnerabilities
                  FROM scans
                  ORDER BY scan_date DESC''')
+    # ...existing code...
     domains_with_cves = []
     for row in c.fetchall():
         domain = row[0]
@@ -48,9 +49,12 @@ def critical_high_cves():
         unique_cve_vulns = []
         for v in vulns:
             if v.get('type') == 'tech_vulnerability' and v.get('severity', '').lower() in ('critical', 'high'):
+                # Gebruik cve_id + description als unieke key
                 cve_id = v.get('cve_id', 'Unknown')
-                if cve_id not in seen_cves:
-                    seen_cves.add(cve_id)
+                description = v.get('description', '')
+                unique_key = (cve_id, description)
+                if unique_key not in seen_cves:
+                    seen_cves.add(unique_key)
                     unique_cve_vulns.append(v)
         if unique_cve_vulns:
             domains_with_cves.append({
@@ -59,6 +63,7 @@ def critical_high_cves():
                 'vulnerabilities': unique_cve_vulns
             })
     conn.close()
+# ...existing code...
     return render_template('critical_high_cves.html', domains=domains_with_cves)
 
 @single_scan_bp.route('/history')
