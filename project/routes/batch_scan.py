@@ -409,3 +409,20 @@ def download_batch_file(batch_id, filename):
     except Exception as e:
         print(f"Error downloading file: {str(e)}")
         return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
+
+@batch_scan_bp.route('/batch_progress/<batch_id>')
+def batch_progress(batch_id):
+    """Return the current progress (completed/total) for a batch scan as JSON."""
+    try:
+        conn = sqlite3.connect('easm.db')
+        c = conn.cursor()
+        c.execute('''SELECT completed_domains, total_domains FROM batch_scans WHERE batch_id = ?''', (batch_id,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            completed, total = row
+            return jsonify({'completed': completed, 'total': total})
+        else:
+            return jsonify({'error': 'Batch not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

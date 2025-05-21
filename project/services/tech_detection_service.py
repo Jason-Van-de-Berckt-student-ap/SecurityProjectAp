@@ -19,7 +19,22 @@ def scan_website_technologies(domain):
     
     try:
         response = requests.post(url, data=data, headers=headers)
-        loaded = json.loads(response.content)
+        # Check of response geldig is
+        if response.status_code != 200:
+            print(f"Error: API returned status {response.status_code} for {domain}")
+            return []
+        if not response.content or response.content.strip() == b'':
+            print(f"Error: API returned empty response for {domain}")
+            return []
+        content_type = response.headers.get('Content-Type', '')
+        if 'application/json' not in content_type and 'text/json' not in content_type:
+            print(f"Error: API did not return JSON for {domain} (Content-Type: {content_type})")
+            return []
+        try:
+            loaded = json.loads(response.content)
+        except Exception as e:
+            print(f"Error parsing JSON from API for {domain}: {e}")
+            return []
         
         # Debug output
         print("API Response:", loaded)

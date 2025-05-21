@@ -124,7 +124,7 @@
         
         <div class="mt-6 flex flex-wrap gap-4">
             <button id="start-processing" 
-                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
+                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 hidden"
                     x-bind:disabled="processing || completed"
                     @click="processing = true; startProcessing()">
                 Start Processing
@@ -218,6 +218,26 @@
                 `;
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            startProcessing();
+        });
+
+        // Poll progress API elke 5 seconden en update 'Voltooid'
+        (function() {
+            const batchId = '{{ batch_id }}';
+            function pollProgress() {
+                fetch(`/batch_progress/${batchId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.completed !== undefined && data.total !== undefined) {
+                            document.getElementById('completed-count').textContent = data.completed;
+                        }
+                    })
+                    .catch(() => {});
+            }
+            setInterval(pollProgress, 20000);
+        })();
     </script>
 </body>
 </html>

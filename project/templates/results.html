@@ -281,44 +281,6 @@
                     {% endif %}
                 </div>
 
-                <!-- Darkweb Links Section -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3">Darkweb Links</h3>
-                    {% if onionlinks and (onionlinks.interested_links or onionlinks.other_links) %}
-                        {% if onionlinks.interested_links %}
-                            <div class="mb-4">
-                                <h4 class="font-medium text-red-600 mb-2">Potentially Relevant Links</h4>
-                                <div class="bg-red-50 p-4 rounded">
-                                    <ul class="list-disc pl-5">
-                                        {% for link in onionlinks.interested_links %}
-                                            <li class="text-gray-700 mb-2">
-                                                <a href="{{ link }}" target="_blank" class="text-red-600 hover:text-red-800 break-all">{{ link }}</a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        {% endif %}
-                        
-                        {% if onionlinks.other_links %}
-                            <div class="mb-4">
-                                <h4 class="font-medium text-gray-600 mb-2">Other Links</h4>
-                                <div class="bg-gray-50 p-4 rounded">
-                                    <ul class="list-disc pl-5">
-                                        {% for link in onionlinks.other_links %}
-                                            <li class="text-gray-700 mb-2">
-                                                <a href="{{ link }}" target="_blank" class="text-gray-600 hover:text-gray-800 break-all">{{ link }}</a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <p class="text-gray-600">No darkweb links found.</p>
-                    {% endif %}
-                </div>
-
                 <!-- Port Findings Section -->
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-3">Open Ports</h3>
