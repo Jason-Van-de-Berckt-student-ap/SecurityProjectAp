@@ -22,6 +22,23 @@ from config import BRAVE_API_KEY
 # Create blueprint
 single_scan_bp = Blueprint('single_scan', __name__)
 
+def cleanup_old_scans(domain, db_path='easm.db'):
+    """Verwijder oudste scans als er meer dan 5 voor dit domein zijn."""
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('''
+        SELECT rowid FROM scans
+        WHERE domain = ?
+        ORDER BY scan_date ASC
+    ''', (domain,))
+    rows = c.fetchall()
+    if len(rows) > 5:
+        # Bepaal hoeveel er verwijderd moeten worden
+        to_delete = rows[:len(rows) - 5]
+        c.executemany('DELETE FROM scans WHERE rowid = ?', to_delete)
+        conn.commit()
+    conn.close()
+
 # Routes
 @single_scan_bp.route('/')
 def index():
@@ -78,7 +95,7 @@ def scan_history():
                             vulnerabilities, subdomains, related_domains, onion_links
                      FROM scans 
                      WHERE is_batch_scan = 0
-                     ORDER BY scan_date DESC''')
+                     ORDER BY domain ASC, scan_date DESC''')
         single_scans = []
         for row in c.fetchall():
             single_scans.append({
@@ -184,6 +201,7 @@ def scan_domain():
                    json.dumps(results['onion_links'])))
         conn.commit()
         conn.close()
+        cleanup_old_scans(domain)
         
         # Export results to CSV
         from routes.utils import export_to_csv
@@ -214,6 +232,7 @@ def scan_domain():
                              subdomains=[],
                              related_domains=[],
                              onionlinks={'interested_links': [], 'other_links': []})
+
 
 @single_scan_bp.route('/download/<filename>')
 def download_batch_file(filename):

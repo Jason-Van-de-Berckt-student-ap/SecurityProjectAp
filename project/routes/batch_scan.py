@@ -36,6 +36,23 @@ def ensure_directories():
     os.makedirs('uploads', exist_ok=True)
     os.makedirs('results', exist_ok=True)
 
+# Domain cleanup function
+def cleanup_old_scans(domain, db_path='easm.db'):
+    """Verwijder oudste scans als er meer dan 5 voor dit domein zijn."""
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute('''
+        SELECT rowid FROM scans
+        WHERE domain = ?
+        ORDER BY scan_date ASC
+    ''', (domain,))
+    rows = c.fetchall()
+    if len(rows) > 5:
+        to_delete = rows[:len(rows) - 5]
+        c.executemany('DELETE FROM scans WHERE rowid = ?', to_delete)
+        conn.commit()
+    conn.close()
+
 # Routes
 @batch_scan_bp.route('/batch_scan', methods=['POST'])
 def batch_scan():
@@ -195,6 +212,8 @@ def process_batch(batch_id):
                        batch_id,
                        1))
             conn.commit()
+            # Opruimen van oude scans voor dit domein
+            cleanup_old_scans(domain)
             
             # Update batch progress
             completed_domains += 1
