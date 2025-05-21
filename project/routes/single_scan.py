@@ -30,12 +30,12 @@ def index():
 
 @single_scan_bp.route('/critical_high_cves')
 def critical_high_cves():
-    """Toon alle domeinen met minstens één Critical of High CVE (ook uit batch scans)."""
+    """Toon alle domeinen met minstens één unieke Critical of High CVE (ook uit batch scans)."""
     conn = sqlite3.connect('easm.db')
     c = conn.cursor()
     c.execute('''SELECT domain, scan_date, vulnerabilities
                  FROM scans
-                 ORDER BY scan_date DESC''')  # Verwijder WHERE is_batch_scan = 0
+                 ORDER BY scan_date DESC''')
     domains_with_cves = []
     for row in c.fetchall():
         domain = row[0]
@@ -44,15 +44,19 @@ def critical_high_cves():
             vulns = json.loads(row[2])
         except Exception:
             continue
-        cve_vulns = [
-            v for v in vulns
-            if v.get('type') == 'tech_vulnerability' and v.get('severity', '').lower() in ('critical', 'high')
-        ]
-        if cve_vulns:
+        seen_cves = set()
+        unique_cve_vulns = []
+        for v in vulns:
+            if v.get('type') == 'tech_vulnerability' and v.get('severity', '').lower() in ('critical', 'high'):
+                cve_id = v.get('cve_id', 'Unknown')
+                if cve_id not in seen_cves:
+                    seen_cves.add(cve_id)
+                    unique_cve_vulns.append(v)
+        if unique_cve_vulns:
             domains_with_cves.append({
                 'domain': domain,
                 'scan_date': scan_date,
-                'vulnerabilities': cve_vulns
+                'vulnerabilities': unique_cve_vulns
             })
     conn.close()
     return render_template('critical_high_cves.html', domains=domains_with_cves)
