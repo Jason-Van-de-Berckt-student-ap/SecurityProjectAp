@@ -1,248 +1,418 @@
 {# templates/darkweb.html #}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dark Web Links for {{ domain }} - EASM Domain Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' }, },
-                        slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' }, }
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-in-out",
+              "slide-up": "slideUp 0.3s ease-out",
+              "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            },
+            keyframes: {
+              fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
+              slideUp: {
+                "0%": { transform: "translateY(10px)", opacity: "0" },
+                "100%": { transform: "translateY(0)", opacity: "1" },
+              },
+            },
+          },
+        },
+      };
     </script>
-</head>
-<body class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200">
+  </head>
+  <body
+    class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200"
+  >
     <!-- Dark Mode Toggle -->
     <div class="fixed top-4 right-4 z-50">
-        <button id="theme-toggle" class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <svg id="sun-icon" class="w-6 h-6 text-yellow-500 dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
-            <svg id="moon-icon" class="w-6 h-6 text-blue-400 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-        </button>
+      <button
+        id="theme-toggle"
+        class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+      >
+        <svg
+          id="sun-icon"
+          class="w-6 h-6 text-yellow-500 dark:hidden"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+            clip-rule="evenodd"
+          ></path>
+        </svg>
+        <svg
+          id="moon-icon"
+          class="w-6 h-6 text-blue-400 hidden dark:block"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+          ></path>
+        </svg>
+      </button>
     </div>
 
     <div class="container mx-auto px-4 py-12">
-        <div class="text-center mb-10 animate-fade-in">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-600 dark:to-gray-800 rounded-2xl shadow-lg mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.75 12h.008v.008H9.75V12zm.356-3.971c5.602-.978 10.014 3.434 9.036 9.036l-9.036-9.036z"></path></svg>
-            </div>
-            <h1 class="text-5xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-600 dark:to-gray-800 bg-clip-text text-transparent mb-3">
-                Dark Web Links
-            </h1>
-            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-                Associated .onion links found for <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ domain }}</span>.
-            </p>
+      <div class="text-center mb-12 animate-fade-in">
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-600 dark:to-gray-800 rounded-2xl shadow-lg mb-6"
+        >
+          <svg
+            class="w-10 h-10 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.75 12h.008v.008H9.75V12zm.356-3.971c5.602-.978 10.014 3.434 9.036 9.036l-9.036-9.036z"
+            ></path>
+          </svg>
         </div>
+        <h1
+          class="text-6xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 dark:from-gray-600 dark:to-gray-800 bg-clip-text text-transparent mb-4"
+        >
+          Dark Web Links
+        </h1>
+        <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          Associated .onion links found for
+          <span class="font-semibold text-indigo-600 dark:text-indigo-400"
+            >{{ domain }}</span
+          >.
+        </p>
+      </div>
 
-        <div id="darkweb-tabs-container" class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50 animate-slide-up">
-            <!-- Tabs -->
-            <div class="border-b border-gray-200/80 dark:border-gray-700/60 px-1.5 py-1">
-                <nav class="flex bg-gray-100/50 dark:bg-gray-700/30 rounded-xl p-1">
-                    <button data-tab="interested-content"
-                            class="tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out">
-                        Interesting Links
-                        <span class="ml-1.5 bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-200 px-2 py-0.5 rounded-full text-xs">
-                            {{ result.interested_links|length }}
-                        </span>
-                    </button>
-                    <button data-tab="other-content"
-                            class="tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out">
-                        Other Links
-                        <span class="ml-1.5 bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 px-2 py-0.5 rounded-full text-xs">
-                            {{ result.other_links|length }}
-                        </span>
-                    </button>
-                </nav>
-            </div>
-
-            <!-- Tab Content -->
-            <div class="p-6 md:p-8">
-                <!-- Interested Links Tab -->
-                <div id="interested-content" class="tab-content">
-                    {% if result.interested_links %}
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full table-auto">
-                                <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
-                                    <tr class="bg-gray-50/50 dark:bg-gray-700/30">
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">#</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Onion Link</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
-                                    {% for link in result.interested_links %}
-                                        <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150">
-                                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ loop.index }}</td>
-                                            <td class="px-4 py-3 text-sm">
-                                                <a href="{{ link }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline break-all" target="_blank" rel="noopener noreferrer">{{ link }}</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <p class="text-gray-500 dark:text-gray-400 py-4 text-center">No interesting links found.</p>
-                    {% endif %}
-                </div>
-
-                <!-- Other Links Tab -->
-                <div id="other-content" class="tab-content hidden">
-                    {% if result.other_links %}
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full table-auto">
-                                <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
-                                    <tr class="bg-gray-50/50 dark:bg-gray-700/30">
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">#</th>
-                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Onion Link</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
-                                    {% for link in result.other_links %}
-                                        <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150">
-                                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ loop.index }}</td>
-                                            <td class="px-4 py-3 text-sm">
-                                                <a href="{{ link }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline break-all" target="_blank" rel="noopener noreferrer">{{ link }}</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <p class="text-gray-500 dark:text-gray-400 py-4 text-center">No other links found.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-12">
-            <button onclick="window.close();" class="inline-flex items-center justify-center bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-500 dark:hover:to-gray-600 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
-                 Close Window
+      <div
+        id="darkweb-tabs-container"
+        class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50 animate-slide-up"
+      >
+        <!-- Tabs -->
+        <div
+          class="border-b border-gray-200/80 dark:border-gray-700/60 px-1.5 py-1"
+        >
+          <nav class="flex bg-gray-100/50 dark:bg-gray-700/30 rounded-xl p-1">
+            <button
+              data-tab="interested-content"
+              class="tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out"
+            >
+              Interesting Links
+              <span
+                class="ml-1.5 bg-blue-100 text-blue-700 dark:bg-blue-700 dark:text-blue-200 px-2 py-0.5 rounded-full text-xs"
+              >
+                {{ result.interested_links|length }}
+              </span>
             </button>
+            <button
+              data-tab="other-content"
+              class="tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out"
+            >
+              Other Links
+              <span
+                class="ml-1.5 bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 px-2 py-0.5 rounded-full text-xs"
+              >
+                {{ result.other_links|length }}
+              </span>
+            </button>
+          </nav>
         </div>
+
+        <!-- Tab Content -->
+        <div class="p-6 md:p-8">
+          <!-- Interested Links Tab -->
+          <div id="interested-content" class="tab-content">
+            {% if result.interested_links %}
+            <div class="overflow-x-auto">
+              <table class="min-w-full table-auto">
+                <thead
+                  class="border-b border-gray-200/80 dark:border-gray-700/60"
+                >
+                  <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+                    <th
+                      class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16"
+                    >
+                      #
+                    </th>
+                    <th
+                      class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Onion Link
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  class="divide-y divide-gray-200/80 dark:divide-gray-700/60"
+                >
+                  {% for link in result.interested_links %}
+                  <tr
+                    class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150"
+                  >
+                    <td
+                      class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      {{ loop.index }}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                      <a
+                        href="{{ link }}"
+                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline break-all"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >{{ link }}</a
+                      >
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500 dark:text-gray-400 py-4 text-center">
+              No interesting links found.
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- Other Links Tab -->
+          <div id="other-content" class="tab-content hidden">
+            {% if result.other_links %}
+            <div class="overflow-x-auto">
+              <table class="min-w-full table-auto">
+                <thead
+                  class="border-b border-gray-200/80 dark:border-gray-700/60"
+                >
+                  <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+                    <th
+                      class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16"
+                    >
+                      #
+                    </th>
+                    <th
+                      class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      Onion Link
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  class="divide-y divide-gray-200/80 dark:divide-gray-700/60"
+                >
+                  {% for link in result.other_links %}
+                  <tr
+                    class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150"
+                  >
+                    <td
+                      class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      {{ loop.index }}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                      <a
+                        href="{{ link }}"
+                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline break-all"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >{{ link }}</a
+                      >
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500 dark:text-gray-400 py-4 text-center">
+              No other links found.
+            </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-12">
+        <button
+          onclick="window.close();"
+          class="inline-flex items-center justify-center bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-500 dark:hover:to-gray-600 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+        >
+          Close Window
+        </button>
+      </div>
     </div>
 
     <!-- Enhanced Footer -->
-    <footer class="mt-16 text-center py-10 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-center mb-3">
-                <div class="w-7 h-7 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">EASM Scanner</h3>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">External Attack Surface Management Tool</p>
-            <p class="text-xs text-gray-500 dark:text-gray-500">Empowering cybersecurity professionals with advanced domain intelligence</p>
+    <footer
+      class="mt-16 text-center py-10 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50"
+    >
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-center mb-3">
+          <div
+            class="w-7 h-7 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md"
+          >
+            <svg
+              class="w-4 h-4 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              ></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">
+            EASM Scanner
+          </h3>
         </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          External Attack Surface Management Tool
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-500">
+          Empowering cybersecurity professionals with advanced domain
+          intelligence
+        </p>
+      </div>
     </footer>
 
     <script>
-        // Dark mode functionality
-        const themeToggle = document.getElementById('theme-toggle');
-        const html = document.documentElement;
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) { html.classList.toggle('dark', savedTheme === 'dark'); }
-        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { html.classList.add('dark');}
-        themeToggle.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-            themeToggle.style.transform = 'scale(0.95)';
-            setTimeout(() => { themeToggle.style.transform = 'scale(1)'; }, 150);
-        });
+      // Dark mode functionality
+      const themeToggle = document.getElementById("theme-toggle");
+      const html = document.documentElement;
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme) {
+        html.classList.toggle("dark", savedTheme === "dark");
+      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        html.classList.add("dark");
+      }
+      themeToggle.addEventListener("click", () => {
+        html.classList.toggle("dark");
+        localStorage.setItem(
+          "theme",
+          html.classList.contains("dark") ? "dark" : "light"
+        );
+        themeToggle.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          themeToggle.style.transform = "scale(1)";
+        }, 150);
+      });
 
-        // Tab functionality
-        function initializeTabs(containerSelector, activeClass, inactiveClass) {
-            const tabContainer = document.querySelector(containerSelector);
-            if (!tabContainer) return;
+      // Tab functionality
+      function initializeTabs(containerSelector, activeClass, inactiveClass) {
+        const tabContainer = document.querySelector(containerSelector);
+        if (!tabContainer) return;
 
-            const tabButtons = tabContainer.querySelectorAll('.tab-button');
-            const tabContents = tabContainer.parentElement.querySelectorAll('.tab-content');
+        const tabButtons = tabContainer.querySelectorAll(".tab-button");
+        const tabContents =
+          tabContainer.parentElement.querySelectorAll(".tab-content");
 
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetTabId = button.dataset.tab;
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const targetTabId = button.dataset.tab;
 
-                    tabButtons.forEach(btn => {
-                        btn.className = inactiveClass;
-                    });
-                    button.className = activeClass;
-
-                    tabContents.forEach(content => {
-                        if (content.id === targetTabId) {
-                            content.classList.remove('hidden');
-                             content.style.opacity = '0';
-                            setTimeout(() => { content.style.opacity = '1'; content.classList.add('animate-fade-in'); }, 50);
-                        } else {
-                            content.classList.add('hidden');
-                            content.style.opacity = '0';
-                            content.classList.remove('animate-fade-in');
-                        }
-                    });
-                });
+            tabButtons.forEach((btn) => {
+              btn.className = inactiveClass;
             });
-             // Activate the first tab by default
-            if (tabButtons.length > 0) {
-                tabButtons[0].click();
-                // Ensure first tab content is visible without animation on load
-                const firstTabContentId = tabButtons[0].dataset.tab;
-                const firstTabContent = document.getElementById(firstTabContentId);
-                if (firstTabContent) {
-                    firstTabContent.classList.remove('hidden', 'animate-fade-in');
-                    firstTabContent.style.opacity = '1';
-                }
-            }
-        }
+            button.className = activeClass;
 
-        const activeTabClassesDarkweb = "tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-sm focus:outline-none";
-        const inactiveTabClassesDarkweb = "tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 focus:outline-none";
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeTabs('#darkweb-tabs-container nav', activeTabClassesDarkweb, inactiveTabClassesDarkweb);
-        });
-
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+            tabContents.forEach((content) => {
+              if (content.id === targetTabId) {
+                content.classList.remove("hidden");
+                content.style.opacity = "0";
+                setTimeout(() => {
+                  content.style.opacity = "1";
+                  content.classList.add("animate-fade-in");
+                }, 50);
+              } else {
+                content.classList.add("hidden");
+                content.style.opacity = "0";
+                content.classList.remove("animate-fade-in");
+              }
             });
+          });
         });
+        // Activate the first tab by default
+        if (tabButtons.length > 0) {
+          tabButtons[0].click();
+          // Ensure first tab content is visible without animation on load
+          const firstTabContentId = tabButtons[0].dataset.tab;
+          const firstTabContent = document.getElementById(firstTabContentId);
+          if (firstTabContent) {
+            firstTabContent.classList.remove("hidden", "animate-fade-in");
+            firstTabContent.style.opacity = "1";
+          }
+        }
+      }
 
-        // Particle effect
-        function createParticle() {
-            const particle = document.createElement('div');
-            particle.className = 'fixed w-1 h-1 md:w-2 md:h-2 bg-blue-400/20 dark:bg-blue-600/20 rounded-full pointer-events-none -z-10';
-            particle.style.left = Math.random() * window.innerWidth + 'px';
-            particle.style.top = window.innerHeight + Math.random() * 100 + 'px';
-            particle.style.animation = `floatParticle ${Math.random() * 5 + 5}s linear ${Math.random() * 2}s forwards`;
-            document.body.appendChild(particle);
-            setTimeout(() => { particle.remove(); }, 10000);
+      const activeTabClassesDarkweb =
+        "tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-sm focus:outline-none";
+      const inactiveTabClassesDarkweb =
+        "tab-button flex-1 py-2.5 px-4 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 focus:outline-none";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        initializeTabs(
+          "#darkweb-tabs-container nav",
+          activeTabClassesDarkweb,
+          inactiveTabClassesDarkweb
+        );
+      });
+
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute("href");
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        });
+      });
+
+      // Particle effect
+      function createParticle() {
+        const particle = document.createElement("div");
+        particle.className =
+          "fixed w-1 h-1 md:w-2 md:h-2 bg-blue-400/20 dark:bg-blue-600/20 rounded-full pointer-events-none -z-10";
+        particle.style.left = Math.random() * window.innerWidth + "px";
+        particle.style.top = window.innerHeight + Math.random() * 100 + "px";
+        particle.style.animation = `floatParticle ${
+          Math.random() * 5 + 5
+        }s linear ${Math.random() * 2}s forwards`;
+        document.body.appendChild(particle);
+        setTimeout(() => {
+          particle.remove();
+        }, 10000);
+      }
+      if (
+        !document.getElementById("scan-loading") &&
+        !document.getElementById("loading-overlay")
+      ) {
+        setInterval(createParticle, 1500);
+        if (!document.getElementById("particle-animation-style")) {
+          const style = document.createElement("style");
+          style.id = "particle-animation-style";
+          style.textContent = `@keyframes floatParticle { to { transform: translateY(-110vh) rotate(${
+            Math.random() * 720 - 360
+          }deg); opacity: 0; } }`;
+          document.head.appendChild(style);
         }
-        if (!document.getElementById('scan-loading') && !document.getElementById('loading-overlay')) {
-            setInterval(createParticle, 1500);
-            if (!document.getElementById('particle-animation-style')) {
-                const style = document.createElement('style');
-                style.id = 'particle-animation-style';
-                style.textContent = `@keyframes floatParticle { to { transform: translateY(-110vh) rotate(${Math.random() * 720 - 360}deg); opacity: 0; } }`;
-                document.head.appendChild(style);
-            }
-        }
+      }
     </script>
-</body>
+  </body>
+</html>
