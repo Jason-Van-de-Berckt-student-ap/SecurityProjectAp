@@ -136,92 +136,6 @@
             </p>
           </div>
         </div>
-<<<<<<< HEAD
-        
-        <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Batch Information</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                <div>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Batch ID:</span> <span class="text-gray-700 dark:text-gray-300">{{ batch_id }}</span></p>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Total Domains:</span> <span class="text-gray-700 dark:text-gray-300">{{ total }}</span></p>
-                </div>
-                <div>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Status:</span> <span class="px-2.5 py-0.5 bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 rounded-full text-xs font-medium">Completed</span></p>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Successful Scans:</span> <span class="text-gray-700 dark:text-gray-300">{{ completed }}</span></p>
-                </div>
-            </div>              <div class="mt-8">
-                <a href="{{ url_for('batch_scan.download_batch_file', batch_id=batch_id, filename=zip_file) }}" class="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 px-5 rounded-lg font-semibold text-sm transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                    Download All Results (ZIP)
-                </a>
-            </div>
-        </div>
-        
-        <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up" style="animation-delay: 0.1s;">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Domain Scan Results</h2>
-            
-            <div class="overflow-x-auto">
-                <table class="min-w-full table-auto">
-                    <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
-                        <tr class="bg-gray-50/50 dark:bg-gray-700/30">
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Domain</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Findings</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
-                        {% for domain, domain_results in results.items() %}
-                            <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150">
-                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">{{ domain }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                    {% if domain_results.status == 'completed' %}
-                                        <span class="px-2.5 py-0.5 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 font-medium">Completed</span>
-                                    {% else %}
-                                        <span class="px-2.5 py-0.5 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200 font-medium">Error</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                                    {% if domain_results.status == 'completed' %}                                        {% set vuln_count = domain_results.results.vulnerabilities|length %}
-                                        {% set sub_count = domain_results.results.subdomains|length %}
-                                        {% set rel_count = domain_results.results.related_domains|length %}
-                                        {% set darkweb_count = (domain_results.results.onion_links.interested_links|length + domain_results.results.onion_links.other_links|length) if domain_results.results.onion_links else 0 %}
-                                        <div class="flex flex-wrap gap-1">
-                                            <span class="inline-flex items-center px-2 py-0.5 text-xs bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200 rounded-full font-medium">{{ vuln_count }} Vulns</span>
-                                            <span class="inline-flex items-center px-2 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 rounded-full font-medium">{{ sub_count }} Subs</span>
-                                            <span class="inline-flex items-center px-2 py-0.5 text-xs bg-purple-100 text-purple-800 dark:bg-purple-700 dark:text-purple-200 rounded-full font-medium">{{ rel_count }} Related</span>
-                                            {% if darkweb_count > 0 %}<span class="inline-flex items-center px-2 py-0.5 text-xs bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200 rounded-full font-medium">{{ darkweb_count }} Darkweb</span>{% endif %}
-                                        </div>
-                                    {% else %}
-                                        {{ domain_results.error }}
-                                    {% endif %}
-                                </td>                                <td class="px-4 py-3 whitespace-nowrap text-sm space-x-2">
-                                    {% if domain_results.status == 'completed' %}
-                                        <a href="{{ url_for('single_scan.view_scan_results', domain=domain) }}?batch_id={{ batch_id }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium inline-flex items-center" target="_blank">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>View
-                                        </a>
-                                        <a href="{{ url_for('batch_scan.download_batch_file', batch_id=batch_id, filename=domain + '.csv') }}" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium inline-flex items-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>CSV
-                                        </a>
-                                    {% else %}
-                                        <button class="text-gray-400 dark:text-gray-500 cursor-not-allowed inline-flex items-center" disabled>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" /></svg>N/A
-                                        </button>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div class="text-center mt-12">
-            <a href="/" class="inline-flex items-center justify-center bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-500 dark:hover:to-gray-600 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
-                <svg class="w-5 h-5 mr-2 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                Back to Scanner
-            </a>
-=======
 
         <div class="mt-8">
           <a
@@ -395,7 +309,6 @@
               {% endfor %}
             </tbody>
           </table>
->>>>>>> e5aabcc10f87b423cdc5b6d3f0f1b42a95ae3555
         </div>
       </div>
 

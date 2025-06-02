@@ -210,51 +210,8 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-3 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl">
                             <svg class="w-5 h-5 inline mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Upload a .txt file with one domain per line or a .csv file with domains in the first column.
+                            </svg>                            Upload a .txt file with one domain per line or a .csv file with domains in the first column.
                         </p>
-                    </div>
-                    
-                    <!-- Scan Options (same enhanced style) -->
-                    <div class="mb-8">
-                        <p class="text-gray-800 dark:text-gray-200 font-semibold mb-6 text-lg">Scan Configuration</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
-                                <input type="checkbox" name="dns_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
-                                <div class="ml-4">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">DNS Records</span>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Analyze DNS configuration</p>
-                                </div>
-                            </label>
-                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
-                                <input type="checkbox" name="ssl_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
-                                <div class="ml-4">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">SSL Certificate</span>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Certificate validation</p>
-                                </div>
-                            </label>
-                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
-                                <input type="checkbox" name="subdomain_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
-                                <div class="ml-4">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">Subdomain Discovery</span>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Find hidden subdomains</p>
-                                </div>
-                            </label>
-                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
-                                <input type="checkbox" name="related_domains" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
-                                <div class="ml-4">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">Related Domains</span>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Associated domains</p>
-                                </div>
-                            </label>
-                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
-                                <input type="checkbox" name="vuln_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
-                                <div class="ml-4">
-                                    <span class="font-medium text-gray-800 dark:text-gray-200">Vulnerability Scan</span>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Security assessment</p>
-                                </div>
-                            </label>
-                        </div>
                     </div>
 
                     <button type="submit" 

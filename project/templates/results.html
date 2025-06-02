@@ -2,9 +2,9 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domain Analysis Results</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Domain Analysis Results - EASM Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -223,107 +223,95 @@
           </div>
           <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">
             DNS Records
-          </h2>
-        </div>
+          </h2>        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {% for record_type, records in dns_info.items() %}
-          <div
-            class="bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl p-6 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-all duration-300"
-          >
-            <h3
-              class="font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center text-lg"
-            >
-              <span class="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
-              {{ record_type }}
-            </h3>
-            <ul class="space-y-2">
-              {% for record in records %}
-              <li
-                class="text-gray-600 dark:text-gray-400 font-mono text-base bg-white/60 dark:bg-gray-800/60 p-3 rounded-xl"
-              >
-                {{ record }}
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endfor %}
-        </div>
+        {% if error %}
+            <div class="bg-red-50/70 dark:bg-red-900/20 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-red-200/50 dark:border-red-800/50 mb-8 animate-slide-up">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                        <p class="font-bold text-red-800 dark:text-red-300 text-lg">Error</p>
+                        <p class="text-red-700 dark:text-red-400 text-base">{{ error }}</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Action Buttons -->
+            <div class="mb-8 flex flex-wrap gap-4 justify-center animate-slide-up">
+                {% if batch_id %}
+                    <a href="{{ url_for('batch_scan.download_batch_file', batch_id=batch_id, filename=csv_file) }}" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download CSV Report
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('single_scan.download_scan_results', domain=domain) }}" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download CSV Report
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- DNS Records Display -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for record_type, records in dns_info.items() %}
+                <div class="bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl p-6 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-all duration-300">
+                    <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center text-lg">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                        {{ record_type }}
+                    </h3>
+                    <ul class="space-y-2">
+                        {% for record in records %}
+                        <li class="text-gray-600 dark:text-gray-400 font-mono text-base bg-white/60 dark:bg-gray-800/60 p-3 rounded-xl">
+                            {{ record }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
       </div>
 
       <!-- SSL Certificate Section -->
-      <div
-        class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up"
-      >
+      <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up">
         <div class="flex items-center mb-6">
-          <div
-            class="w-12 h-12 bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl flex items-center justify-center mr-4"
-          >
-            <svg
-              class="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              ></path>
+          <div class="w-12 h-12 bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl flex items-center justify-center mr-4">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
             </svg>
           </div>
-          <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">
-            SSL Certificate
-          </h2>
+          <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200">SSL Certificate</h2>
         </div>
 
         {% if 'error' in ssl_info %}
-        <div
-          class="bg-red-50/70 dark:bg-red-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-800"
-        >
+        <div class="bg-red-50/70 dark:bg-red-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
           <div class="flex items-center">
-            <svg
-              class="w-6 h-6 text-red-600 dark:text-red-400 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
+            <svg class="w-6 h-6 text-red-600 dark:text-red-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <p class="text-red-700 dark:text-red-400 font-medium">
-              {{ ssl_info.error }}
-            </p>
+            <p class="text-red-700 dark:text-red-400 font-medium">{{ ssl_info.error }}</p>
           </div>
         </div>
         {% else %}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl p-6">
-            <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-3 text-lg">
-              Issuer
-            </h3>
-            <div
-              class="text-gray-600 dark:text-gray-400 font-mono text-base bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl"
-            >
+            <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-3 text-lg">Issuer</h3>
+            <div class="text-gray-600 dark:text-gray-400 font-mono text-base bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl">
               {{ ssl_info.issuer }}
             </div>
           </div>
           <div class="bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl p-6">
-            <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-3 text-lg">
-              Expires
-            </h3>
-            <div
-              class="text-gray-600 dark:text-gray-400 font-mono text-base bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl"
-            >
+            <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-3 text-lg">Expires</h3>
+            <div class="text-gray-600 dark:text-gray-400 font-mono text-base bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl">
               {{ ssl_info.expires }}
             </div>
-          </div>
-        </div>
+          </div>        </div>
         {% endif %}
       </div>
 
@@ -855,11 +843,9 @@
           </nav>
         </div>
         <!-- Tab Content -->
-        <div class="p-8">
-          <div id="active" class="tab-content">
-            {% set active_subdomains =
-            subdomains|selectattr('status','equalto','Active')|list %} {% if
-            active_subdomains %}
+        <div class="p-8">          <div id="active" class="tab-content">
+            {% set active_subdomains = subdomains|selectattr('status','equalto','Active')|list %}
+            {% if active_subdomains %}
             <div class="overflow-x-auto">
               <table class="min-w-full table-auto">
                 <thead

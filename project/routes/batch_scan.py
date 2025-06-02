@@ -117,7 +117,7 @@ def batch_scan():
         # Validate domains in the file
         valid_domains, invalid_domains, error_message = validate_domains_file(file_content, file_extension)
         
-        # Return validation results
+        # Return validation results without scan options (will be selected on validation page)
         return render_template('validate_domains.html',
                              filename=filename,
                              valid_domains=valid_domains,
@@ -315,12 +315,11 @@ def process_batch(batch_id):
                 'status': 'error',
                 'error': str(e)
             }
-            
-            # Update batch progress even for failed scans
+              # Update batch progress even for failed scans
             conn = sqlite3.connect('easm.db')
             c = conn.cursor()
             completed_domains += 1
-            c.execute('''UPDATE batch_scans 
+            c.execute('''UPDATE batch_scans
                          SET completed_domains = ?, 
                              status = CASE 
                                 WHEN ? = total_domains THEN 'completed'
@@ -330,7 +329,8 @@ def process_batch(batch_id):
                       (completed_domains, completed_domains, batch_id))
             conn.commit()
             conn.close()
-      # Save all results to a JSON file
+    
+    # Save all results to a JSON file
     with open(os.path.join(batch_dir, 'all_results.json'), 'w') as f:
         json.dump(all_results, f)
     
@@ -367,12 +367,12 @@ def batch_results_view(batch_id):
     results_file = os.path.join(batch_dir, 'all_results.json')
     completed = 0
     results = {}
-    
     if os.path.exists(results_file):
         with open(results_file, 'r') as f:
             results = json.load(f)
         completed = sum(1 for r in results.values() if r.get('status') == 'completed')
-          # If all domains are processed, redirect to completion page
+        
+        # If all domains are processed, redirect to completion page
         if completed == len(domains):
             # Create ZIP file containing all results
             zip_filename = create_batch_zip(batch_id, batch_dir)
