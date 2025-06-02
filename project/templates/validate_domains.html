@@ -1,127 +1,241 @@
 {# templates/validate_domains.html #}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Validate Domains</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validate Domains - EASM Domain Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' }, },
+                        slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' }, }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-4">Validate Domains</h1>
+<body class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200">
+    <!-- Dark Mode Toggle -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="theme-toggle" class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <svg id="sun-icon" class="w-6 h-6 text-yellow-500 dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+            <svg id="moon-icon" class="w-6 h-6 text-blue-400 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+        </button>
+    </div>
+
+    <div class="container mx-auto px-4 py-12">
+        <div class="text-center mb-10 animate-fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
+                Validate Domains
+            </h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+                Review uploaded domains and configure batch scan options.
+            </p>
+        </div>
         
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-bold mb-4">Domain Validation Results</h2>
+        <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 animate-slide-up">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Domain Validation Results</h2>
             
             {% if error_message %}
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-                    <p class="font-bold">Error</p>
+                <div class="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-400 text-red-700 dark:text-red-300 p-4 rounded-md mb-6 text-sm" role="alert">
+                    <p class="font-bold">Error:</p>
                     <p>{{ error_message }}</p>
                 </div>
             {% endif %}
             
-            <div class="mb-4">
-                <p><span class="font-medium">File:</span> {{ filename }}</p>
-                <p><span class="font-medium">Valid Domains:</span> {{ valid_domains|length }}</p>
-                <p><span class="font-medium">Invalid Domains:</span> {{ invalid_domains|length }}</p>
+            <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                    <span class="font-medium text-gray-600 dark:text-gray-400 block">File:</span> 
+                    <span class="text-gray-700 dark:text-gray-300 truncate" title="{{ filename }}">{{ filename }}</span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                    <span class="font-medium text-gray-600 dark:text-gray-400 block">Valid Domains:</span>
+                    <span class="text-green-600 dark:text-green-400 font-semibold">{{ valid_domains|length }}</span>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg">
+                    <span class="font-medium text-gray-600 dark:text-gray-400 block">Invalid Domains:</span>
+                    <span class="text-red-600 dark:text-red-400 font-semibold">{{ invalid_domains|length }}</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {% if valid_domains %}
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-300">Valid Domains</h3>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 max-h-60 overflow-y-auto text-sm border border-gray-200 dark:border-gray-600">
+                        {% for domain in valid_domains %}
+                            <div class="mb-1 flex items-center text-gray-700 dark:text-gray-300">
+                                <svg class="h-4 w-4 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                <span>{{ domain }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            
+                {% if invalid_domains %}
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-300">Invalid Domains</h3>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 max-h-60 overflow-y-auto text-sm border border-gray-200 dark:border-gray-600">
+                        {% for domain in invalid_domains %}
+                            <div class="mb-1 flex items-center text-gray-700 dark:text-gray-300">
+                                <svg class="h-4 w-4 text-red-500 dark:text-red-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                                <span>{{ domain }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             
             {% if valid_domains %}
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium mb-2">Valid Domains</h3>
-                    <div class="bg-gray-50 rounded-md p-3 max-h-48 overflow-y-auto">
-                        {% for domain in valid_domains %}
-                            <div class="mb-1 flex items-center">
-                                <svg class="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                                <span>{{ domain }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-            
-            {% if invalid_domains %}
-                <div class="mb-6">
-                    <h3 class="text-lg font-medium mb-2">Invalid Domains</h3>
-                    <div class="bg-gray-50 rounded-md p-3 max-h-48 overflow-y-auto">
-                        {% for domain in invalid_domains %}
-                            <div class="mb-1 flex items-center">
-                                <svg class="h-4 w-4 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                                <span>{{ domain }}</span>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-            
-            {% if valid_domains %}
-                <form action="/process_batch_validation" method="post" class="mt-6">
+                <form action="/process_batch_validation" method="post">
                     <input type="hidden" name="domains_list" value="{{ valid_domains|join(',') }}">
-                    
-                    <div class="bg-gray-50 p-4 rounded-md mb-6">
-                        <h3 class="text-lg font-medium mb-4">Select Scan Options</h3>
-                        
+                    <div class="bg-gray-50/50 dark:bg-gray-700/30 p-6 rounded-xl mb-8 border border-gray-200 dark:border-gray-600">
+                        <h3 class="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Select Scan Options</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="dns_scan" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2">DNS Records</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="ssl_scan" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2">SSL Certificate</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="vuln_scan" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2">Vulnerability Scan</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="subdomain_scan" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2">Subdomain Discovery</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="related_domains" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2">Related Domains</span>
-                                </label>
-                            </div>
-                            <div>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="darkweb" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2">Darkweb Scan</span>
-                                </label>
-                            </div>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
+                                <input type="checkbox" name="dns_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">DNS Records</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Analyze DNS configuration</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
+                                <input type="checkbox" name="ssl_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">SSL Certificate</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Certificate validation</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
+                                <input type="checkbox" name="subdomain_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Subdomain Discovery</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Find hidden subdomains</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
+                                <input type="checkbox" name="related_domains" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Related Domains</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Associated domains</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
+                                <input type="checkbox" name="vuln_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Vulnerability Scan</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Security assessment</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer">
+                                <input type="checkbox" name="darkweb" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Darkweb Scan</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Dark web monitoring</p>
+                                </div>
+                            </label>
                         </div>
                     </div>
-                    
-                    <div class="flex flex-wrap gap-4">
-                        <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-                            Start Batch Scan
+                    <div class="flex flex-wrap gap-4 items-center justify-center">
+                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 px-8 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
+                            <div class="flex items-center justify-center">
+                                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                Start Batch Scan
+                            </div>
                         </button>
-                        
-                        <a href="/" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 inline-block">
-                            ← Back to Scanner
-                        </a>
                     </div>
                 </form>
             {% else %}
-                <div class="mt-6">
-                    <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 inline-block">
-                        ← Back to Scanner
+                <div class="mt-8 text-center">
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">No valid domains to process. Please upload a new file.</p>
+                    <a href="/" class="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+                        <svg class="w-5 h-5 mr-2 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                        Back to Scanner
                     </a>
                 </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- Enhanced Footer -->
+    <footer class="mt-20 text-center py-12 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-center mb-4">
+                <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">EASM Scanner</h3>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">External Attack Surface Management Tool</p>
+            <p class="text-sm text-gray-500 dark:text-gray-500">Empowering cybersecurity professionals with advanced domain intelligence</p>
+        </div>
+    </footer>
+
+    <script>
+        // Dark mode functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) { html.classList.toggle('dark', savedTheme === 'dark'); }
+        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { html.classList.add('dark');}
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            themeToggle.style.transform = 'scale(0.95)';
+            setTimeout(() => { themeToggle.style.transform = 'scale(1)'; }, 150);
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Particle effect
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'fixed w-1 h-1 md:w-2 md:h-2 bg-blue-400/20 dark:bg-blue-600/20 rounded-full pointer-events-none -z-10';
+            particle.style.left = Math.random() * window.innerWidth + 'px';
+            particle.style.top = window.innerHeight + Math.random() * 100 + 'px';
+            particle.style.animation = `floatParticle ${Math.random() * 5 + 5}s linear ${Math.random() * 2}s forwards`;
+            document.body.appendChild(particle);
+            setTimeout(() => { particle.remove(); }, 10000);
+        }
+        if (!document.getElementById('scan-loading') && !document.getElementById('loading-overlay')) {
+            setInterval(createParticle, 1500);
+            if (!document.getElementById('particle-animation-style')) {
+                const style = document.createElement('style');
+                style.id = 'particle-animation-style';
+                style.textContent = `@keyframes floatParticle { to { transform: translateY(-110vh) rotate(${Math.random() * 720 - 360}deg); opacity: 0; } }`;
+                document.head.appendChild(style);
+            }
+        }
+    </script>
 </body>
 </html>

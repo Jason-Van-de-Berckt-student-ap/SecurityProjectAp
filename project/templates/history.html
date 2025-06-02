@@ -1,79 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan History - EASM Domain Scanner</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 1.5s linear infinite',
+                        'spin-reverse': 'spin 1.5s linear infinite reverse',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+<body class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200">
+    <!-- Dark Mode Toggle -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="theme-toggle" class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <svg id="sun-icon" class="w-6 h-6 text-yellow-500 dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+            <svg id="moon-icon" class="w-6 h-6 text-blue-400 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+        </button>
+    </div>
+
+    <div class="container mx-auto px-4 py-12">
         <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800">Scan History</h1>
-            <p class="text-gray-600 mt-2">View past domain scan results</p>
+        <div class="text-center mb-10 animate-fade-in">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
+                Scan History
+            </h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+                Review past domain scan results and manage batch processes.
+            </p>
+        </div>
+        
+        <div class="text-center mb-8 animate-slide-up">
+            <a href="{{ url_for('single_scan.critical_high_cves') }}"
+               class="inline-flex items-center justify-center bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 3.001-1.742 3.001H4.42c-1.53 0-2.493-1.667-1.743-3.001l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1.75-2.75a.75.75 0 000 1.5h3.5a.75.75 0 000-1.5h-3.5z" clip-rule="evenodd"></path></svg>
+                View Domains with Critical/High CVEs
+            </a>
         </div>
 
         <!-- Tabs -->
-        <div class="max-w-md mx-auto mb-4">
-            <div class="flex border-b border-gray-200">
-                <button id="single-scan-tab" onclick="showTab('single-scans')" class="px-4 py-2 text-blue-500 border-b-2 border-blue-500 font-medium">Single Scans</button>
-                <button id="batch-scan-tab" onclick="showTab('batch-scans')" class="px-4 py-2 text-gray-500 font-medium">Batch Scans</button>
+        <div id="history-tabs-container" class="max-w-xl mx-auto mb-8 animate-slide-up">
+            <div class="flex bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
+                <button data-tab="single-scans-content"
+                        class="tab-button flex-1 px-3 py-2.5 md:px-6 md:py-3 text-sm md:text-base font-semibold rounded-xl transition-all duration-300">
+                    Single Scans
+                </button>
+                <button data-tab="batch-scans-content"
+                        class="tab-button flex-1 px-3 py-2.5 md:px-6 md:py-3 text-sm md:text-base font-semibold rounded-xl transition-all duration-300">
+                    Batch Scans
+                </button>
             </div>
         </div>
-
-        <!-- ...existing code... -->
-        <div class="text-center mb-8">
-            <div class="mt-4">
-                <a href="{{ url_for('single_scan.critical_high_cves') }}"
-                class="inline-block bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    Bekijk alle domeinen met Critical/High CVE's
-                </a>
-            </div>
-        </div>
-        <!-- ...existing code... -->
 
         <!-- Single Scans Table -->
-        <div id="single-scans" class="bg-white rounded-lg shadow-md p-6">
+        <div id="single-scans-content" class="tab-content bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50">
             <div class="overflow-x-auto">
                 <table class="min-w-full table-auto">
-                    <thead>
-                        <tr class="bg-gray-50">
-                            <th class="px-4 py-2 text-left">Domain</th>
-                            <th class="px-4 py-2 text-left">Scan Date</th>
-                            <th class="px-4 py-2 text-left">Scan Types</th>
-                            <th class="px-4 py-2 text-left">Actions</th>
+                    <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
+                        <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Domain</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Scan Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Scan Types</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
                         {% for scan in single_scans %}
-                        <tr class="border-t border-gray-200 hover:bg-gray-50">
-                            <td class="px-4 py-2">{{ scan.domain }}</td>
-                            <td class="px-4 py-2">{{ scan.scan_date }}</td>
-                            <td class="px-4 py-2">
-                                {% if scan.dns_records != '{}' %}
-                                <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">DNS</span>
-                                {% endif %}
-                                {% if scan.ssl_info != '{}' %}
-                                <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1">SSL</span>
-                                {% endif %}
-                                {% if scan.vulnerabilities != '[]' %}
-                                <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded mr-1">Vuln</span>
-                                {% endif %}
-                                {% if scan.subdomains != '[]' %}
-                                <span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded mr-1">Sub</span>
-                                {% endif %}
-                                {% if scan.related_domains != '[]' %}
-                                <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mr-1">Related</span>
-                                {% endif %}
-                                {% if scan.onion_links != '{}' %}
-                                <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">Darkweb</span>
-                                {% endif %}
+                        <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ scan.domain }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{{ scan.scan_date }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                {% if scan.dns_records != '{}' %}<span class="inline-block bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 text-xs px-2 py-0.5 rounded-full mr-1 mb-1">DNS</span>{% endif %}
+                                {% if scan.ssl_info != '{}' %}<span class="inline-block bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 text-xs px-2 py-0.5 rounded-full mr-1 mb-1">SSL</span>{% endif %}
+                                {% if scan.vulnerabilities != '[]' %}<span class="inline-block bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200 text-xs px-2 py-0.5 rounded-full mr-1 mb-1">Vuln</span>{% endif %}
+                                {% if scan.subdomains != '[]' %}<span class="inline-block bg-purple-100 text-purple-800 dark:bg-purple-700 dark:text-purple-200 text-xs px-2 py-0.5 rounded-full mr-1 mb-1">Sub</span>{% endif %}
+                                {% if scan.related_domains != '[]' %}<span class="inline-block bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200 text-xs px-2 py-0.5 rounded-full mr-1 mb-1">Related</span>{% endif %}
+                                {% if scan.onion_links != '{}' %}<span class="inline-block bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200 text-xs px-2 py-0.5 rounded-full mr-1 mb-1">Darkweb</span>{% endif %}
                             </td>
-                            <td class="px-4 py-2">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm space-x-2">
                                 <a href="/scan/{{ scan.domain }}" 
-                                   class="text-blue-500 hover:text-blue-700 mr-3">View Details</a>
+                                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">View</a>
                                 <a href="/scan/{{ scan.domain }}/download" 
-                                   class="text-green-500 hover:text-green-700">Download Report</a>
+                                   class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium">Download</a>
                             </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">No single scans found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -82,47 +120,46 @@
         </div>
 
         <!-- Batch Scans Table -->
-        <div id="batch-scans" class="bg-white rounded-lg shadow-md p-6 hidden">
+        <div id="batch-scans-content" class="tab-content hidden bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50">
             <div class="overflow-x-auto">
                 <table class="min-w-full table-auto">
-                    <thead>
-                        <tr class="bg-gray-50">
-                            <th class="px-4 py-2 text-left">Batch ID</th>
-                            <th class="px-4 py-2 text-left">Date</th>
-                            <th class="px-4 py-2 text-left">Progress</th>
-                            <th class="px-4 py-2 text-left">Status</th>
-                            <th class="px-4 py-2 text-left">Actions</th>
+                    <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
+                        <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Batch ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Progress</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
                         {% for batch in batch_scans %}
-                        <tr class="border-t border-gray-200 hover:bg-gray-50">
-                            <td class="px-4 py-2">{{ batch.batch_id }}</td>
-                            <td class="px-4 py-2">{{ batch.created_at }}</td>
-                            <td class="px-4 py-2">
+                        <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ batch.batch_id }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{{ batch.created_at }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                                 {{ batch.completed_domains }}/{{ batch.total_domains }}
-                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ (batch.completed_domains / batch.total_domains * 100)|round }}%"></div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-1">
+                                    <div class="bg-blue-600 dark:bg-blue-500 h-2 rounded-full" style="width: %{{ (batch.completed_domains / batch.total_domains * 100)|round }}%"></div>
                                 </div>
                             </td>
-                            <td class="px-4 py-2">
-                                <span class="inline-block px-2 py-1 rounded text-sm
-                                    {% if batch.status == 'completed' %}
-                                        bg-green-100 text-green-800
-                                    {% elif batch.status == 'in_progress' %}
-                                        bg-yellow-100 text-yellow-800
-                                    {% else %}
-                                        bg-gray-100 text-gray-800
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if batch.status == 'completed' %} bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200
+                                    {% elif batch.status == 'in_progress' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200
+                                    {% else %} bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200
                                     {% endif %}">
                                     {{ batch.status|title }}
                                 </span>
                             </td>
-                            <td class="px-4 py-2">
-                                <a href="/batch_results/{{ batch.batch_id }}" 
-                                   class="text-blue-500 hover:text-blue-700 mr-3">View Results</a>
-                                <a href="/batch_results/{{ batch.batch_id }}/download" 
-                                   class="text-green-500 hover:text-green-700">Download All</a>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm space-x-2">
+                                <a href="/batch_results/{{ batch.batch_id }}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">View</a>
+                                <a href="/batch_results/{{ batch.batch_id }}/download" class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium">Download All</a>
                             </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">No batch scans found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -131,31 +168,127 @@
         </div>
 
         <!-- Back to Home -->
-        <div class="text-center mt-8">
-            <a href="/" class="inline-block bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="text-center mt-12">
+            <a href="/" class="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
+                <svg class="w-5 h-5 mr-2 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                 Back to Scanner
             </a>
         </div>
     </div>
 
-    <!-- JavaScript for tab functionality -->
+    <!-- Enhanced Footer -->
+    <footer class="mt-20 text-center py-12 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-center mb-4">
+                <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">EASM Scanner</h3>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">External Attack Surface Management Tool</p>
+            <p class="text-sm text-gray-500 dark:text-gray-500">Empowering cybersecurity professionals with advanced domain intelligence</p>
+        </div>
+    </footer>
+
     <script>
-        function showTab(tabName) {
-            // Hide all tabs
-            document.getElementById('single-scans').classList.add('hidden');
-            document.getElementById('batch-scans').classList.add('hidden');
-            
-            // Reset tab buttons
-            document.getElementById('single-scan-tab').classList.remove('text-blue-500', 'border-b-2', 'border-blue-500');
-            document.getElementById('single-scan-tab').classList.add('text-gray-500');
-            document.getElementById('batch-scan-tab').classList.remove('text-blue-500', 'border-b-2', 'border-blue-500');
-            document.getElementById('batch-scan-tab').classList.add('text-gray-500');
-            
-            // Show selected tab
-            document.getElementById(tabName).classList.remove('hidden');
-            document.getElementById(tabName.replace('-scans', '-scan-tab')).classList.remove('text-gray-500');
-            document.getElementById(tabName.replace('-scans', '-scan-tab')).classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+        // Dark mode functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) { html.classList.toggle('dark', savedTheme === 'dark'); }
+        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { html.classList.add('dark');}
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            themeToggle.style.transform = 'scale(0.95)';
+            setTimeout(() => { themeToggle.style.transform = 'scale(1)'; }, 150);
+        });
+
+        // Tab functionality for history page
+        function initializeTabs(containerSelector, activeClass, inactiveClass) {
+            const tabContainer = document.querySelector(containerSelector);
+            if (!tabContainer) return;
+
+            const tabButtons = tabContainer.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content'); // Assuming content IDs match button data-tab
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTabId = button.dataset.tab;
+
+                    tabButtons.forEach(btn => {
+                        btn.className = inactiveClass; // Reset all buttons to inactive
+                    });
+                    button.className = activeClass; // Set clicked button to active
+
+                    tabContents.forEach(content => {
+                        if (content.id === targetTabId) {
+                            content.classList.remove('hidden');
+                            content.style.opacity = '0';
+                            setTimeout(() => { content.style.opacity = '1'; content.classList.add('animate-fade-in');}, 50);
+                        } else {
+                            content.classList.add('hidden');
+                            content.style.opacity = '0';
+                            content.classList.remove('animate-fade-in');
+                        }
+                    });
+                });
+            });
+
+            // Activate the first tab by default
+            if (tabButtons.length > 0) {
+                tabButtons[0].click();
+                 // Ensure first tab content is visible without animation on load
+                const firstTabContentId = tabButtons[0].dataset.tab;
+                const firstTabContent = document.getElementById(firstTabContentId);
+                if (firstTabContent) {
+                    firstTabContent.classList.remove('hidden', 'animate-fade-in');
+                    firstTabContent.style.opacity = '1';
+                }
+            }
+        }
+        
+        const activeTabClasses = "tab-button flex-1 px-3 py-2.5 md:px-6 md:py-3 text-sm md:text-base text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-semibold transition-all duration-300 shadow-md focus:outline-none";
+        const inactiveTabClasses = "tab-button flex-1 px-3 py-2.5 md:px-6 md:py-3 text-sm md:text-base text-gray-600 dark:text-gray-300 font-semibold rounded-xl transition-all duration-300 hover:bg-white/50 dark:hover:bg-gray-700/50 focus:outline-none";
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs('#history-tabs-container', activeTabClasses, inactiveTabClasses);
+        });
+
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Particle effect
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'fixed w-1 h-1 md:w-2 md:h-2 bg-blue-400/20 dark:bg-blue-600/20 rounded-full pointer-events-none -z-10';
+            particle.style.left = Math.random() * window.innerWidth + 'px';
+            particle.style.top = window.innerHeight + Math.random() * 100 + 'px';
+            particle.style.animation = `floatParticle ${Math.random() * 5 + 5}s linear ${Math.random() * 2}s forwards`;
+            document.body.appendChild(particle);
+            setTimeout(() => { particle.remove(); }, 10000);
+        }
+        if (!document.getElementById('scan-loading') && !document.getElementById('loading-overlay')) {
+            setInterval(createParticle, 1500);
+            if (!document.getElementById('particle-animation-style')) {
+                const style = document.createElement('style');
+                style.id = 'particle-animation-style';
+                style.textContent = `@keyframes floatParticle { to { transform: translateY(-110vh) rotate(${Math.random() * 720 - 360}deg); opacity: 0; } }`;
+                document.head.appendChild(style);
+            }
         }
     </script>
 </body>
-</html> 
+</html>
