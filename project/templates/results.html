@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domain Analysis Results</title>
+    <title>Domain Analysis Results - EASM Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -87,8 +87,7 @@
                     </div>
                 </div>
             </div>
-        {% else %}
-            <!-- Action Buttons -->
+        {% else %}            <!-- Action Buttons -->
             <div class="mb-8 flex flex-wrap gap-4 justify-center animate-slide-up">
                 {% if batch_id %}
                     <a href="{{ url_for('batch_scan.download_batch_file', batch_id=batch_id, filename=csv_file) }}" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center">
@@ -98,7 +97,7 @@
                         Download CSV Report
                     </a>
                 {% else %}
-                    <a href="{{ url_for('single_scan.download_batch_file', filename=csv_file) }}" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center">
+                    <a href="{{ url_for('single_scan.download_scan_results', domain=domain) }}" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl inline-flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>

@@ -8,6 +8,8 @@ import os
 import time
 import csv
 import sqlite3
+import zipfile
+import io
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from pathlib import Path
@@ -52,6 +54,39 @@ def cleanup_old_scans(domain, db_path='easm.db'):
         c.executemany('DELETE FROM scans WHERE rowid = ?', to_delete)
         conn.commit()
     conn.close()
+
+def create_batch_zip(batch_id, batch_dir):
+    """Create a ZIP file containing all CSV files and results from a batch scan."""
+    try:
+        zip_filename = f'batch_results_{batch_id}.zip'
+        zip_path = os.path.join(batch_dir, zip_filename)
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Add all CSV files
+            for file in os.listdir(batch_dir):
+                if file.endswith('.csv'):
+                    file_path = os.path.join(batch_dir, file)
+                    zipf.write(file_path, file)
+            
+            # Add the JSON results file
+            json_file = os.path.join(batch_dir, 'all_results.json')
+            if os.path.exists(json_file):
+                zipf.write(json_file, 'all_results.json')
+            
+            # Add the domains list
+            domains_file = os.path.join(batch_dir, 'domains.txt')
+            if os.path.exists(domains_file):
+                zipf.write(domains_file, 'domains.txt')
+            
+            # Add scan options
+            options_file = os.path.join(batch_dir, 'options.json')
+            if os.path.exists(options_file):
+                zipf.write(options_file, 'scan_options.json')
+        
+        return zip_filename
+    except Exception as e:
+        print(f"Error creating ZIP file: {str(e)}")
+        return None
 
 # Routes
 @batch_scan_bp.route('/batch_scan', methods=['POST'])
@@ -295,10 +330,14 @@ def process_batch(batch_id):
                       (completed_domains, completed_domains, batch_id))
             conn.commit()
             conn.close()
-    
-    # Save all results to a JSON file
+      # Save all results to a JSON file
     with open(os.path.join(batch_dir, 'all_results.json'), 'w') as f:
         json.dump(all_results, f)
+    
+    # Create ZIP file containing all results
+    zip_filename = create_batch_zip(batch_id, batch_dir)
+    if not zip_filename:
+        zip_filename = f'batch_results_{batch_id}.zip'  # fallback name
     
     # Return the complete results page instead of just a status
     return render_template('batch_complete.html',
@@ -306,7 +345,7 @@ def process_batch(batch_id):
                          results=all_results,
                          total=len(domains),
                          completed=completed_domains,
-                         combined_csv=f'combined_results_{batch_id}.csv')
+                         zip_file=zip_filename)
 
 @batch_scan_bp.route('/batch_results/<batch_id>')
 def batch_results_view(batch_id):
@@ -333,16 +372,19 @@ def batch_results_view(batch_id):
         with open(results_file, 'r') as f:
             results = json.load(f)
         completed = sum(1 for r in results.values() if r.get('status') == 'completed')
-        
-        # If all domains are processed, redirect to completion page
+          # If all domains are processed, redirect to completion page
         if completed == len(domains):
-            combined_csv = f'combined_results_{batch_id}.csv'
+            # Create ZIP file containing all results
+            zip_filename = create_batch_zip(batch_id, batch_dir)
+            if not zip_filename:
+                zip_filename = f'batch_results_{batch_id}.zip'  # fallback name
+            
             return render_template('batch_complete.html', 
                                 batch_id=batch_id, 
                                 results=results,
                                 total=len(domains),
                                 completed=completed,
-                                combined_csv=combined_csv)
+                                zip_file=zip_filename)
     
     # Render the batch results tracking page
     return render_template('batch_results.html',
@@ -445,3 +487,29 @@ def batch_progress(batch_id):
             return jsonify({'error': 'Batch not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@batch_scan_bp.route('/batch_results/<batch_id>/download')
+def download_batch_zip(batch_id):
+    """Download the ZIP file for a completed batch scan from the history page."""
+    try:
+        batch_dir = os.path.join('results', batch_id)
+        if not os.path.exists(batch_dir):
+            return jsonify({'error': f'Batch {batch_id} not found'}), 404
+        
+        # Look for the ZIP file in the batch directory
+        zip_filename = f'batch_results_{batch_id}.zip'
+        zip_path = os.path.join(batch_dir, zip_filename)
+        
+        if not os.path.exists(zip_path):
+            # Try to create the ZIP file if it doesn't exist
+            zip_filename = create_batch_zip(batch_id, batch_dir)
+            if not zip_filename:
+                return jsonify({'error': 'Unable to create or find ZIP file for this batch'}), 404
+            zip_path = os.path.join(batch_dir, zip_filename)
+        
+        # Use absolute path for send_from_directory
+        abs_batch_dir = os.path.abspath(batch_dir)
+        return send_from_directory(abs_batch_dir, zip_filename, as_attachment=True)
+    except Exception as e:
+        print(f"Error downloading batch ZIP: {str(e)}")
+        return jsonify({'error': f'Error downloading batch ZIP: {str(e)}'}), 500
