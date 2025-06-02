@@ -1,524 +1,995 @@
 {# templates/batch_results.html #}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Batch Scan Processing - EASM Domain Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'spin-fast': 'spin 1s linear infinite', // For the main spinner part
-                        'spin-reverse-slower': 'spin 1.8s linear infinite reverse', // For the secondary spinner part
-                    },
-                    keyframes: {
-                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' }, },
-                        slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' }, }
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-in-out",
+              "slide-up": "slideUp 0.3s ease-out",
+              "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              "spin-fast": "spin 1s linear infinite", // For the main spinner part
+              "spin-reverse-slower": "spin 1.8s linear infinite reverse", // For the secondary spinner part
+            },
+            keyframes: {
+              fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
+              slideUp: {
+                "0%": { transform: "translateY(10px)", opacity: "0" },
+                "100%": { transform: "translateY(0)", opacity: "1" },
+              },
+            },
+          },
+        },
+      };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js"
+      defer
+    ></script>
     <style>
-        .loading-overlay-full { /* Renamed to avoid conflict if any */
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 25, 47, 0.8); /* Darker backdrop for better contrast */
-            backdrop-filter: blur(4px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0; /* Start hidden for transition */
-            transition: opacity 0.3s ease-in-out;
-        }
-        .loading-overlay-full.visible {
-            opacity: 1;
-        }
+      .loading-overlay-full {
+        /* Renamed to avoid conflict if any */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(
+          10,
+          25,
+          47,
+          0.8
+        ); /* Darker backdrop for better contrast */
+        backdrop-filter: blur(4px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 0; /* Start hidden for transition */
+        transition: opacity 0.3s ease-in-out;
+      }
+      .loading-overlay-full.visible {
+        opacity: 1;
+      }
     </style>
-</head>
-<body class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200" x-data="{ processing: true, completed: false }">
+  </head>
+  <body
+    class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200"
+    x-data="{ processing: true, completed: false }"
+  >
     <!-- Dark Mode Toggle -->
     <div class="fixed top-4 right-4 z-50">
-        <button id="theme-toggle" class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <svg id="sun-icon" class="w-6 h-6 text-yellow-500 dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
-            <svg id="moon-icon" class="w-6 h-6 text-blue-400 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-        </button>
+      <button
+        id="theme-toggle"
+        class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+      >
+        <svg
+          id="sun-icon"
+          class="w-6 h-6 text-yellow-500 dark:hidden"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+            clip-rule="evenodd"
+          ></path>
+        </svg>
+        <svg
+          id="moon-icon"
+          class="w-6 h-6 text-blue-400 hidden dark:block"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+          ></path>
+        </svg>
+      </button>
     </div>
 
     <!-- Enhanced Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay-full visible" data-total="{{ total }}">
-        <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col items-center max-w-lg w-full mx-4 text-center">
-            <div class="relative mb-8">
-                <div class="w-20 h-20 border-4 border-blue-200 dark:border-blue-700 rounded-full animate-pulse-slow"></div>
-                <div class="absolute top-0 left-0 w-20 h-20 border-4 border-transparent border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin-fast"></div>
-                <div class="absolute top-2 left-2 w-16 h-16 border-4 border-transparent border-t-indigo-500 dark:border-t-indigo-300 rounded-full animate-spin-reverse-slower"></div>
-            </div>
-            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-3">Batch Scan in Progress</h2>
-            <p class="text-lg text-gray-600 dark:text-gray-400 mb-2">Please wait while we analyze all domains.</p>
-            <p class="text-sm text-gray-500 dark:text-gray-500 mb-6">This may take several minutes depending on the number of domains and selected scan options.</p>
-            <div class="bg-gray-100 dark:bg-gray-700/50 rounded-xl px-6 py-3 shadow-inner w-full max-w-xs">
-                <p class="text-gray-700 dark:text-gray-300 font-medium">
-                    Time Elapsed: <span id="scan-timer" class="font-mono text-blue-600 dark:text-blue-400">00:00</span>
-                </p>
-                <p class="text-gray-700 dark:text-gray-300 font-medium mt-1">
-                    Domains Completed: <span id="completed-count-loader" class="font-mono text-blue-600 dark:text-blue-400">{{ completed }}</span> / <span class="font-mono">{{ total }}</span>
-                </p>
-                 <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2.5 mt-3">
-                    <div id="progress-bar-loader" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: {{ (completed / (total if total > 0 else 1) * 100)|round }}%"></div>
-                </div>
-            </div>
+    <div
+      id="loading-overlay"
+      class="loading-overlay-full visible"
+      data-total="{{ total }}"
+    >
+      <div
+        class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col items-center max-w-lg w-full mx-4 text-center"
+      >
+        <div class="relative mb-8">
+          <div
+            class="w-20 h-20 border-4 border-blue-200 dark:border-blue-700 rounded-full animate-pulse-slow"
+          ></div>
+          <div
+            class="absolute top-0 left-0 w-20 h-20 border-4 border-transparent border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin-fast"
+          ></div>
+          <div
+            class="absolute top-2 left-2 w-16 h-16 border-4 border-transparent border-t-indigo-500 dark:border-t-indigo-300 rounded-full animate-spin-reverse-slower"
+          ></div>
         </div>
+        <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-3">
+          Batch Scan in Progress
+        </h2>
+        <p class="text-lg text-gray-600 dark:text-gray-400 mb-2">
+          Please wait while we analyze all domains.
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-500 mb-6">
+          This may take several minutes depending on the number of domains and
+          selected scan options.
+        </p>
+        <div
+          class="bg-gray-100 dark:bg-gray-700/50 rounded-xl px-6 py-3 shadow-inner w-full max-w-xs"
+        >
+          <p class="text-gray-700 dark:text-gray-300 font-medium">
+            Time Elapsed:
+            <span
+              id="scan-timer"
+              class="font-mono text-blue-600 dark:text-blue-400"
+              >00:00</span
+            >
+          </p>
+          <p class="text-gray-700 dark:text-gray-300 font-medium mt-1">
+            Domains Completed:
+            <span
+              id="completed-count-loader"
+              class="font-mono text-blue-600 dark:text-blue-400"
+              >{{ completed }}</span
+            >
+            / <span class="font-mono">{{ total }}</span>
+          </p>
+          <div
+            class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2.5 mt-3"
+          >
+            <div
+              id="progress-bar-loader"
+              class="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-500"
+              style="width: {{ (completed / (total if total > 0 else 1) * 100)|round }}%"
+            ></div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="container mx-auto px-4 py-12" x-show="completed"> <!-- Content shown after processing by JS -->
-        <div class="text-center mb-10 animate-fade-in">
-             <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-4">
-                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            </div>
-            <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-3">
-                Batch Scan Processing
-            </h1>
-            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-                Monitoring the progress of your batch domain scan.
+    <div class="container mx-auto px-4 py-12" x-show="completed">
+      <!-- Content shown after processing by JS -->
+      <div class="text-center mb-12 animate-fade-in">
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-6"
+        >
+          <svg
+            class="w-10 h-10 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            ></path>
+          </svg>
+        </div>
+        <h1
+          class="text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4"
+        >
+          Batch Scan Processing
+        </h1>
+        <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          Monitoring the progress of your batch domain scan.
+        </p>
+      </div>
+
+      <div
+        class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up"
+      >
+        <h2
+          class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100"
+        >
+          Batch Information
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+          <div>
+            <p>
+              <span class="font-medium text-gray-600 dark:text-gray-400"
+                >Batch ID:</span
+              >
+              <span class="text-gray-700 dark:text-gray-300"
+                >{{ batch_id }}</span
+              >
             </p>
+            <p>
+              <span class="font-medium text-gray-600 dark:text-gray-400"
+                >Total Domains:</span
+              >
+              <span class="text-gray-700 dark:text-gray-300">{{ total }}</span>
+            </p>
+          </div>
+          <div>
+            <p>
+              <span class="font-medium text-gray-600 dark:text-gray-400"
+                >Status:</span
+              >
+              <span
+                x-show="!processing && !completed"
+                class="px-2.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200 font-medium"
+                >Ready</span
+              >
+              <span
+                x-show="processing && !completed"
+                class="px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 font-medium"
+                >Processing</span
+              >
+              <span
+                x-show="completed"
+                class="px-2.5 py-0.5 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 font-medium"
+                >Completed</span
+              >
+            </p>
+            <p>
+              <span class="font-medium text-gray-600 dark:text-gray-400"
+                >Completed:</span
+              >
+              <span
+                id="completed-count-main"
+                class="text-gray-700 dark:text-gray-300"
+                >{{ completed }}</span
+              >
+              / {{ total }}
+            </p>
+          </div>
         </div>
-        
-        <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Batch Information</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                <div>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Batch ID:</span> <span class="text-gray-700 dark:text-gray-300">{{ batch_id }}</span></p>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Total Domains:</span> <span class="text-gray-700 dark:text-gray-300">{{ total }}</span></p>
-                </div>
-                <div>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Status:</span> 
-                        <span x-show="!processing && !completed" class="px-2.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200 font-medium">Ready</span>
-                        <span x-show="processing && !completed" class="px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 font-medium">Processing</span>
-                        <span x-show="completed" class="px-2.5 py-0.5 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 font-medium">Completed</span>
-                    </p>
-                    <p><span class="font-medium text-gray-600 dark:text-gray-400">Completed:</span> <span id="completed-count-main" class="text-gray-700 dark:text-gray-300">{{ completed }}</span> / {{ total }}</p>
-                </div>
-            </div>
-            
-            <div class="mt-6 pt-6 border-t border-gray-200/80 dark:border-gray-700/60">
-                <h3 class="font-semibold mb-3 text-gray-700 dark:text-gray-300">Selected Scan Options:</h3>
-                <ul class="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                    {% if scan_options.dns_scan %}<li>DNS Records</li>{% endif %}
-                    {% if scan_options.ssl_scan %}<li>SSL Certificate</li>{% endif %}
-                    {% if scan_options.vuln_scan %}<li>Vulnerability Scan</li>{% endif %}
-                    {% if scan_options.subdomain_scan %}<li>Subdomain Discovery</li>{% endif %}
-                    {% if scan_options.related_domains %}<li>Related Domains</li>{% endif %}
-                    {% if scan_options.darkweb %}<li>Darkweb Scan</li>{% endif %}
-                </ul>
-            </div>
+
+        <div
+          class="mt-6 pt-6 border-t border-gray-200/80 dark:border-gray-700/60"
+        >
+          <h3 class="font-semibold mb-3 text-gray-700 dark:text-gray-300">
+            Selected Scan Options:
+          </h3>
+          <ul
+            class="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400"
+          >
+            {% if scan_options.dns_scan %}
+            <li>DNS Records</li>
+            {% endif %} {% if scan_options.ssl_scan %}
+            <li>SSL Certificate</li>
+            {% endif %} {% if scan_options.vuln_scan %}
+            <li>Vulnerability Scan</li>
+            {% endif %} {% if scan_options.subdomain_scan %}
+            <li>Subdomain Discovery</li>
+            {% endif %} {% if scan_options.related_domains %}
+            <li>Related Domains</li>
+            {% endif %} {% if scan_options.darkweb %}
+            <li>Darkweb Scan</li>
+            {% endif %}
+          </ul>
         </div>
-        
-        <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up" style="animation-delay: 0.1s;">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Domains to Process</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full table-auto">
-                    <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
-                        <tr class="bg-gray-50/50 dark:bg-gray-700/30">
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Domain</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="domains-table" class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
-                        {% for domain in domains %}
-                            <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150">
-                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">{{ domain }}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm domain-status" data-domain="{{ domain }}">
-                                    <span class="status-badge px-2.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200 font-medium">Waiting</span>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+      </div>
+
+      <div
+        class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 mb-8 animate-slide-up"
+        style="animation-delay: 0.1s"
+      >
+        <h2
+          class="text-2xl font-semibold mb-6 text-gray-800 dark:text-gray-100"
+        >
+          Domains to Process
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full table-auto">
+            <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
+              <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Domain
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              id="domains-table"
+              class="divide-y divide-gray-200/80 dark:divide-gray-700/60"
+            >
+              {% for domain in domains %}
+              <tr
+                class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150"
+              >
+                <td
+                  class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ domain }}
+                </td>
+                <td
+                  class="px-4 py-3 whitespace-nowrap text-sm domain-status"
+                  data-domain="{{ domain }}"
+                >
+                  <span
+                    class="status-badge px-2.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200 font-medium"
+                    >Waiting</span
+                  >
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        
-        <div class="mt-10 flex flex-wrap gap-4 justify-center animate-slide-up" style="animation-delay: 0.2s;">
-            <button id="start-processing" 
-                    class="hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    x-bind:disabled="processing || completed"
-                    @click="processing = true; startProcessing()">
-                Start Processing
-            </button>
-            
-            <a x-show="completed" 
-               href="/batch_results/{{ batch_id }}" 
-               class="inline-flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
-                View Results
-            </a>
-            
-            <a href="/" class="inline-flex items-center justify-center bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-500 dark:hover:to-gray-600 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
-                <svg class="w-5 h-5 mr-2 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                Back to Scanner
-            </a>
-        </div>
+      </div>
+
+      <div
+        class="mt-10 flex flex-wrap gap-4 justify-center animate-slide-up"
+        style="animation-delay: 0.2s"
+      >
+        <button
+          id="start-processing"
+          class="hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          x-bind:disabled="processing || completed"
+          @click="processing = true; startProcessing()"
+        >
+          Start Processing
+        </button>
+
+        <a
+          x-show="completed"
+          href="/batch_results/{{ batch_id }}"
+          class="inline-flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+        >
+          View Results
+        </a>
+
+        <a
+          href="/"
+          class="inline-flex items-center justify-center bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 dark:from-gray-600 dark:to-gray-700 dark:hover:from-gray-500 dark:hover:to-gray-600 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+        >
+          <svg
+            class="w-5 h-5 mr-2 transform rotate-180"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 8l4 4m0 0l-4 4m4-4H3"
+            ></path>
+          </svg>
+          Back to Scanner
+        </a>
+      </div>
     </div>
-    
+
     <!-- Enhanced Footer -->
-    <footer class="mt-16 text-center py-10 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50" x-show="completed">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-center mb-3">
-                <div class="w-7 h-7 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">EASM Scanner</h3>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">External Attack Surface Management Tool</p>
-            <p class="text-xs text-gray-500 dark:text-gray-500">Empowering cybersecurity professionals with advanced domain intelligence</p>
+    <footer
+      class="mt-16 text-center py-10 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50"
+      x-show="completed"
+    >
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-center mb-3">
+          <div
+            class="w-7 h-7 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md"
+          >
+            <svg
+              class="w-4 h-4 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              ></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">
+            EASM Scanner
+          </h3>
         </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          External Attack Surface Management Tool
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-500">
+          Empowering cybersecurity professionals with advanced domain
+          intelligence
+        </p>
+      </div>
     </footer>
 
     <script>
-        // Dark mode functionality
-        const themeToggle = document.getElementById('theme-toggle');
-        const html = document.documentElement;
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) { html.classList.toggle('dark', savedTheme === 'dark'); }
-        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { html.classList.add('dark');}
-        themeToggle.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-            themeToggle.style.transform = 'scale(0.95)';
-            setTimeout(() => { themeToggle.style.transform = 'scale(1)'; }, 150);
-        });
+      // Dark mode functionality
+      const themeToggle = document.getElementById("theme-toggle");
+      const html = document.documentElement;
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme) {
+        html.classList.toggle("dark", savedTheme === "dark");
+      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        html.classList.add("dark");
+      }
+      themeToggle.addEventListener("click", () => {
+        html.classList.toggle("dark");
+        localStorage.setItem(
+          "theme",
+          html.classList.contains("dark") ? "dark" : "light"
+        );
+        themeToggle.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          themeToggle.style.transform = "scale(1)";
+        }, 150);
+      });
 
-        let startTime = new Date();
-        let timerInterval;
+      let startTime = new Date();
+      let timerInterval;
 
-        function updateTimer() {
-            const now = new Date();
-            const diff = now - startTime;
-            const minutes = Math.floor(diff / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-            const timerDisplay = document.getElementById('scan-timer');
-            if (timerDisplay) {
-                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
+      function updateTimer() {
+        const now = new Date();
+        const diff = now - startTime;
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        const timerDisplay = document.getElementById("scan-timer");
+        if (timerDisplay) {
+          timerDisplay.textContent = `${minutes
+            .toString()
+            .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
         }
+      }
 
-        timerInterval = setInterval(updateTimer, 1000);
+      timerInterval = setInterval(updateTimer, 1000);
 
-        function checkCompletion() {
-            const completedCountEl = document.getElementById('completed-count-loader');
-            const loadingOverlay = document.getElementById('loading-overlay');
-            const totalCount = parseInt(loadingOverlay.getAttribute('data-total')) || 0;
-            const completedCount = parseInt(completedCountEl ? completedCountEl.textContent : '0');
-            
-            if (completedCount === totalCount && totalCount > 0) { // Ensure totalCount is positive
-                if (loadingOverlay) {
-                    loadingOverlay.classList.remove('visible');
-                    setTimeout(() => loadingOverlay.style.display = 'none', 300); // Match transition
-                    clearInterval(timerInterval);
-                    document.querySelector('body').__x.$data.completed = true;
-                    document.querySelector('body').__x.$data.processing = false;
-                }
-            }
+      function checkCompletion() {
+        const completedCountEl = document.getElementById(
+          "completed-count-loader"
+        );
+        const loadingOverlay = document.getElementById("loading-overlay");
+        const totalCount =
+          parseInt(loadingOverlay.getAttribute("data-total")) || 0;
+        const completedCount = parseInt(
+          completedCountEl ? completedCountEl.textContent : "0"
+        );
+
+        if (completedCount === totalCount && totalCount > 0) {
+          // Ensure totalCount is positive
+          if (loadingOverlay) {
+            loadingOverlay.classList.remove("visible");
+            setTimeout(() => (loadingOverlay.style.display = "none"), 300); // Match transition
+            clearInterval(timerInterval);
+            document.querySelector("body").__x.$data.completed = true;
+            document.querySelector("body").__x.$data.processing = false;
+          }
         }
-        
-        let completionCheckInterval = setInterval(checkCompletion, 2000); // Check more frequently
+      }
 
-        function startProcessing() {
-            const batchId = '{{ batch_id }}';
-            const alpineData = document.querySelector('body').__x.$data;
-            alpineData.processing = true;
-            alpineData.completed = false;
-            
-            fetch(`/process_batch/${batchId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', },
-            })
-            .then(response => {
-                if (!response.ok) { throw new Error('Network response was not ok: ' + response.statusText); }
-                return response.text(); // Expecting HTML content for batch_complete.html
-            })
-            .then(htmlContent => {
-                // Successfully processed, redirect to results by replacing content
-                // This replaces the *entire* document content with the new HTML.
-                // All current scripts and styles will be gone unless they are in htmlContent.
-                document.open();
-                document.write(htmlContent);
-                document.close();
-                // Note: JS in the new htmlContent will need to handle its own initialization.
-                // The Alpine state here will be lost.
-            })
-            .catch(error => {
-                console.error('Error processing batch:', error);
-                alert('An error occurred: ' + error.message + '. Please check console for details.');
-                alpineData.processing = false;
-                alpineData.completed = false; // Stay on this page, show error
-                // Potentially hide loader if stuck
-                const loadingOverlay = document.getElementById('loading-overlay');
-                if (loadingOverlay) {
-                    loadingOverlay.classList.remove('visible');
-                     setTimeout(() => loadingOverlay.style.display = 'none', 300);
+      let completionCheckInterval = setInterval(checkCompletion, 2000); // Check more frequently
+
+      function startProcessing() {
+        const batchId = "{{ batch_id }}";
+        const alpineData = document.querySelector("body").__x.$data;
+        alpineData.processing = true;
+        alpineData.completed = false;
+
+        fetch(`/process_batch/${batchId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(
+                "Network response was not ok: " + response.statusText
+              );
+            }
+            return response.text(); // Expecting HTML content for batch_complete.html
+          })
+          .then((htmlContent) => {
+            // Successfully processed, redirect to results by replacing content
+            // This replaces the *entire* document content with the new HTML.
+            // All current scripts and styles will be gone unless they are in htmlContent.
+            document.open();
+            document.write(htmlContent);
+            document.close();
+            // Note: JS in the new htmlContent will need to handle its own initialization.
+            // The Alpine state here will be lost.
+          })
+          .catch((error) => {
+            console.error("Error processing batch:", error);
+            alert(
+              "An error occurred: " +
+                error.message +
+                ". Please check console for details."
+            );
+            alpineData.processing = false;
+            alpineData.completed = false; // Stay on this page, show error
+            // Potentially hide loader if stuck
+            const loadingOverlay = document.getElementById("loading-overlay");
+            if (loadingOverlay) {
+              loadingOverlay.classList.remove("visible");
+              setTimeout(() => (loadingOverlay.style.display = "none"), 300);
+            }
+          });
+
+        const domainStatusCells = document.querySelectorAll(".domain-status");
+        domainStatusCells.forEach((cell) => {
+          const badge = cell.querySelector(".status-badge");
+          if (badge) {
+            badge.textContent = "Processing";
+            badge.className =
+              "status-badge px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 font-medium";
+          }
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        startProcessing(); // Auto-start processing
+        // Initial check in case completion happened very fast or page was reloaded
+        checkCompletion();
+      });
+
+      // Poll progress API
+      (function () {
+        const batchId = "{{ batch_id }}";
+        const totalDomains =
+          parseInt(
+            document
+              .getElementById("loading-overlay")
+              .getAttribute("data-total")
+          ) || 0;
+
+        function pollProgress() {
+          if (document.querySelector("body").__x.$data.completed) {
+            clearInterval(progressPollInterval); // Stop polling if Alpine says completed
+            return;
+          }
+
+          fetch(`/batch_progress/${batchId}`)
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.completed !== undefined) {
+                const completedVal = parseInt(data.completed);
+                const completedCountLoader = document.getElementById(
+                  "completed-count-loader"
+                );
+                const completedCountMain = document.getElementById(
+                  "completed-count-main"
+                );
+                const progressBarLoader = document.getElementById(
+                  "progress-bar-loader"
+                );
+
+                if (completedCountLoader)
+                  completedCountLoader.textContent = completedVal;
+                if (completedCountMain)
+                  completedCountMain.textContent = completedVal;
+
+                const percentage =
+                  totalDomains > 0 ? (completedVal / totalDomains) * 100 : 0;
+                if (progressBarLoader)
+                  progressBarLoader.style.width = `${Math.round(percentage)}%`;
+
+                // Update individual domain statuses if data.domain_statuses is available
+                if (data.domain_statuses) {
+                  for (const domain in data.domain_statuses) {
+                    const statusCell = document.querySelector(
+                      `.domain-status[data-domain="${domain}"] .status-badge`
+                    );
+                    if (statusCell) {
+                      const status = data.domain_statuses[domain];
+                      statusCell.textContent =
+                        status.charAt(0).toUpperCase() + status.slice(1);
+                      if (status === "completed") {
+                        statusCell.className =
+                          "status-badge px-2.5 py-0.5 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 font-medium";
+                      } else if (status === "error") {
+                        statusCell.className =
+                          "status-badge px-2.5 py-0.5 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200 font-medium";
+                      } else {
+                        // processing, waiting
+                        statusCell.className =
+                          "status-badge px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 font-medium";
+                      }
+                    }
+                  }
                 }
-            });
-            
-            const domainStatusCells = document.querySelectorAll('.domain-status');
-            domainStatusCells.forEach(cell => {
-                const badge = cell.querySelector('.status-badge');
-                if (badge) {
-                    badge.textContent = 'Processing';
-                    badge.className = 'status-badge px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 font-medium';
-                }
+                checkCompletion(); // Check if this update completes the batch
+              }
+            })
+            .catch((err) => {
+              console.warn("Progress poll failed:", err);
             });
         }
+        // Start polling immediately and then every 5 seconds
+        pollProgress();
+        let progressPollInterval = setInterval(pollProgress, 5000);
+      })();
 
-        document.addEventListener('DOMContentLoaded', function() {
-            startProcessing(); // Auto-start processing
-             // Initial check in case completion happened very fast or page was reloaded
-            checkCompletion();
-        });
-
-        // Poll progress API
-        (function() {
-            const batchId = '{{ batch_id }}';
-            const totalDomains = parseInt(document.getElementById('loading-overlay').getAttribute('data-total')) || 0;
-
-            function pollProgress() {
-                if (document.querySelector('body').__x.$data.completed) {
-                    clearInterval(progressPollInterval); // Stop polling if Alpine says completed
-                    return;
-                }
-
-                fetch(`/batch_progress/${batchId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.completed !== undefined) {
-                            const completedVal = parseInt(data.completed);
-                            const completedCountLoader = document.getElementById('completed-count-loader');
-                            const completedCountMain = document.getElementById('completed-count-main');
-                            const progressBarLoader = document.getElementById('progress-bar-loader');
-
-                            if(completedCountLoader) completedCountLoader.textContent = completedVal;
-                            if(completedCountMain) completedCountMain.textContent = completedVal;
-                            
-                            const percentage = totalDomains > 0 ? (completedVal / totalDomains * 100) : 0;
-                            if(progressBarLoader) progressBarLoader.style.width = `${Math.round(percentage)}%`;
-
-                            // Update individual domain statuses if data.domain_statuses is available
-                            if (data.domain_statuses) {
-                                for (const domain in data.domain_statuses) {
-                                    const statusCell = document.querySelector(`.domain-status[data-domain="${domain}"] .status-badge`);
-                                    if (statusCell) {
-                                        const status = data.domain_statuses[domain];
-                                        statusCell.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-                                        if (status === 'completed') {
-                                            statusCell.className = 'status-badge px-2.5 py-0.5 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200 font-medium';
-                                        } else if (status === 'error') {
-                                            statusCell.className = 'status-badge px-2.5 py-0.5 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200 font-medium';
-                                        } else { // processing, waiting
-                                             statusCell.className = 'status-badge px-2.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200 font-medium';
-                                        }
-                                    }
-                                }
-                            }
-                            checkCompletion(); // Check if this update completes the batch
-                        }
-                    })
-                    .catch((err) => { console.warn("Progress poll failed:", err); });
-            }
-            // Start polling immediately and then every 5 seconds
-            pollProgress();
-            let progressPollInterval = setInterval(pollProgress, 5000);
-        })();
-        
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute("href");
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
             });
+          }
         });
+      });
     </script>
-</body>
+  </body>
 </html>
-```
-
-**`critical_high_cves.html`**
-```html
+``` **`critical_high_cves.html`** ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Critical/High CVEs - EASM Domain Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' }, },
-                        slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' }, }
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            animation: {
+              "fade-in": "fadeIn 0.5s ease-in-out",
+              "slide-up": "slideUp 0.3s ease-out",
+              "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            },
+            keyframes: {
+              fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
+              slideUp: {
+                "0%": { transform: "translateY(10px)", opacity: "0" },
+                "100%": { transform: "translateY(0)", opacity: "1" },
+              },
+            },
+          },
+        },
+      };
     </script>
-</head>
-<body class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200">
+  </head>
+  <body
+    class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200"
+  >
     <!-- Dark Mode Toggle -->
     <div class="fixed top-4 right-4 z-50">
-        <button id="theme-toggle" class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <svg id="sun-icon" class="w-6 h-6 text-yellow-500 dark:hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
-            <svg id="moon-icon" class="w-6 h-6 text-blue-400 hidden dark:block" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-        </button>
+      <button
+        id="theme-toggle"
+        class="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+      >
+        <svg
+          id="sun-icon"
+          class="w-6 h-6 text-yellow-500 dark:hidden"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+            clip-rule="evenodd"
+          ></path>
+        </svg>
+        <svg
+          id="moon-icon"
+          class="w-6 h-6 text-blue-400 hidden dark:block"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+          ></path>
+        </svg>
+      </button>
     </div>
 
     <div class="container mx-auto px-4 py-12">
-        <div class="text-center mb-10 animate-fade-in">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl shadow-lg mb-4">
-                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
-            </div>
-            <h1 class="text-5xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent mb-3">
-                Critical & High CVEs
-            </h1>
-            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-                Overview of domains with identified Critical or High severity CVEs.
-            </p>
+      <div class="text-center mb-12 animate-fade-in">
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-red-600 to-rose-600 rounded-2xl shadow-lg mb-6"
+        >
+          <svg
+            class="w-10 h-10 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+            ></path>
+          </svg>
         </div>
+        <h1
+          class="text-6xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent mb-4"
+        >
+          Critical & High CVEs
+        </h1>
+        <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          Overview of domains with identified Critical or High severity CVEs.
+        </p>
+      </div>
 
-        {% if domains %}
-            <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 animate-slide-up">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full table-auto">
-                        <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
-                            <tr class="bg-gray-50/50 dark:bg-gray-700/30">
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Domain</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Scan Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">CVE</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Severity</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
-                            {% for item in domains %}
-                                {% for vuln in item.vulnerabilities %}
-                                    <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150">
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ item.domain }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{{ item.scan_date }}</td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                            {% if vuln.cve_id and vuln.cve_id != 'Unknown' %}
-                                                <a href="https://www.cvedetails.com/cve/{{ vuln.cve_id }}/" target="_blank" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline font-medium">{{ vuln.cve_id }}</a>
-                                            {% else %}
-                                                <span class="text-gray-500 dark:text-gray-400">Unknown</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold
-                                            {% if vuln.severity|lower == 'critical' %}text-purple-600 dark:text-purple-400
-                                            {% elif vuln.severity|lower == 'high' %}text-red-600 dark:text-red-400
-                                            {% else %}text-yellow-600 dark:text-yellow-400{% endif %}">
-                                            {{ vuln.severity }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-md truncate hover:whitespace-normal" title="{{ vuln.description }}">{{ vuln.description }}</td>
-                                    </tr>
-                                {% endfor %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        {% else %}
-            <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-10 border border-white/20 dark:border-gray-700/50 text-center animate-slide-up">
-                <svg class="w-16 h-16 text-green-500 dark:text-green-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <p class="text-xl font-semibold text-gray-700 dark:text-gray-300">No Critical or High CVEs Found</p>
-                <p class="text-gray-600 dark:text-gray-400 mt-1">All scanned domains are currently clear of critical vulnerabilities.</p>
-            </div>
-        {% endif %}
-        <div class="text-center mt-12">
-            <a href="{{ url_for('single_scan.scan_history') }}" class="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
-                <svg class="w-5 h-5 mr-2 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                Back to Scan History
-            </a>
+      {% if domains %}
+      <div
+        class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-white/20 dark:border-gray-700/50 animate-slide-up"
+      >
+        <div class="overflow-x-auto">
+          <table class="min-w-full table-auto">
+            <thead class="border-b border-gray-200/80 dark:border-gray-700/60">
+              <tr class="bg-gray-50/50 dark:bg-gray-700/30">
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Domain
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Scan Date
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  CVE
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Severity
+                </th>
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >
+                  Description
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200/80 dark:divide-gray-700/60">
+              {% for item in domains %} {% for vuln in item.vulnerabilities %}
+              <tr
+                class="hover:bg-gray-50/70 dark:hover:bg-gray-700/40 transition-colors duration-150"
+              >
+                <td
+                  class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300"
+                >
+                  {{ item.domain }}
+                </td>
+                <td
+                  class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400"
+                >
+                  {{ item.scan_date }}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                  {% if vuln.cve_id and vuln.cve_id != 'Unknown' %}
+                  <a
+                    href="https://www.cvedetails.com/cve/{{ vuln.cve_id }}/"
+                    target="_blank"
+                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline font-medium"
+                    >{{ vuln.cve_id }}</a
+                  >
+                  {% else %}
+                  <span class="text-gray-500 dark:text-gray-400">Unknown</span>
+                  {% endif %}
+                </td>
+                <td
+                  class="px-4 py-3 whitespace-nowrap text-sm font-semibold {% if vuln.severity|lower == 'critical' %}text-purple-600 dark:text-purple-400 {% elif vuln.severity|lower == 'high' %}text-red-600 dark:text-red-400 {% else %}text-yellow-600 dark:text-yellow-400{% endif %}"
+                >
+                  {{ vuln.severity }}
+                </td>
+                <td
+                  class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-md truncate hover:whitespace-normal"
+                  title="{{ vuln.description }}"
+                >
+                  {{ vuln.description }}
+                </td>
+              </tr>
+              {% endfor %} {% endfor %}
+            </tbody>
+          </table>
         </div>
+      </div>
+      {% else %}
+      <div
+        class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl p-10 border border-white/20 dark:border-gray-700/50 text-center animate-slide-up"
+      >
+        <svg
+          class="w-16 h-16 text-green-500 dark:text-green-400 mx-auto mb-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+        <p class="text-xl font-semibold text-gray-700 dark:text-gray-300">
+          No Critical or High CVEs Found
+        </p>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">
+          All scanned domains are currently clear of critical vulnerabilities.
+        </p>
+      </div>
+      {% endif %}
+      <div class="text-center mt-12">
+        <a
+          href="{{ url_for('single_scan.scan_history') }}"
+          class="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-6 rounded-xl font-semibold text-base transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+        >
+          <svg
+            class="w-5 h-5 mr-2 transform rotate-180"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 8l4 4m0 0l-4 4m4-4H3"
+            ></path>
+          </svg>
+          Back to Scan History
+        </a>
+      </div>
     </div>
 
     <!-- Enhanced Footer -->
-    <footer class="mt-16 text-center py-10 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-center mb-3">
-                <div class="w-7 h-7 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">EASM Scanner</h3>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">External Attack Surface Management Tool</p>
-            <p class="text-xs text-gray-500 dark:text-gray-500">Empowering cybersecurity professionals with advanced domain intelligence</p>
+    <footer
+      class="mt-16 text-center py-10 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50"
+    >
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-center mb-3">
+          <div
+            class="w-7 h-7 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md"
+          >
+            <svg
+              class="w-4 h-4 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              ></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">
+            EASM Scanner
+          </h3>
         </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          External Attack Surface Management Tool
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-500">
+          Empowering cybersecurity professionals with advanced domain
+          intelligence
+        </p>
+      </div>
     </footer>
 
     <script>
-        // Dark mode functionality
-        themeToggle = document.getElementById('theme-toggle');
-        html = document.documentElement;
-        savedTheme = localStorage.getItem('theme');
-        if (savedTheme) { html.classList.toggle('dark', savedTheme === 'dark'); }
-        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) { html.classList.add('dark');}
-        themeToggle.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-            themeToggle.style.transform = 'scale(0.95)';
-            setTimeout(() => { themeToggle.style.transform = 'scale(1)'; }, 150);
-        });
+      // Dark mode functionality
+      themeToggle = document.getElementById("theme-toggle");
+      html = document.documentElement;
+      savedTheme = localStorage.getItem("theme");
+      if (savedTheme) {
+        html.classList.toggle("dark", savedTheme === "dark");
+      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        html.classList.add("dark");
+      }
+      themeToggle.addEventListener("click", () => {
+        html.classList.toggle("dark");
+        localStorage.setItem(
+          "theme",
+          html.classList.contains("dark") ? "dark" : "light"
+        );
+        themeToggle.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          themeToggle.style.transform = "scale(1)";
+        }, 150);
+      });
 
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute("href");
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
             });
+          }
         });
+      });
 
-        // Particle effect
-        function createParticle() {
-            const particle = document.createElement('div');
-            particle.className = 'fixed w-1 h-1 md:w-2 md:h-2 bg-blue-400/20 dark:bg-blue-600/20 rounded-full pointer-events-none -z-10';
-            particle.style.left = Math.random() * window.innerWidth + 'px';
-            particle.style.top = window.innerHeight + Math.random() * 100 + 'px';
-            particle.style.animation = `floatParticle ${Math.random() * 5 + 5}s linear ${Math.random() * 2}s forwards`;
-            document.body.appendChild(particle);
-            setTimeout(() => { particle.remove(); }, 10000);
+      // Particle effect
+      function createParticle() {
+        const particle = document.createElement("div");
+        particle.className =
+          "fixed w-1 h-1 md:w-2 md:h-2 bg-blue-400/20 dark:bg-blue-600/20 rounded-full pointer-events-none -z-10";
+        particle.style.left = Math.random() * window.innerWidth + "px";
+        particle.style.top = window.innerHeight + Math.random() * 100 + "px";
+        particle.style.animation = `floatParticle ${
+          Math.random() * 5 + 5
+        }s linear ${Math.random() * 2}s forwards`;
+        document.body.appendChild(particle);
+        setTimeout(() => {
+          particle.remove();
+        }, 10000);
+      }
+      if (
+        !document.getElementById("scan-loading") &&
+        !document.getElementById("loading-overlay")
+      ) {
+        setInterval(createParticle, 1500);
+        if (!document.getElementById("particle-animation-style")) {
+          const style = document.createElement("style");
+          style.id = "particle-animation-style";
+          style.textContent = `@keyframes floatParticle { to { transform: translateY(-110vh) rotate(${
+            Math.random() * 720 - 360
+          }deg); opacity: 0; } }`;
+          document.head.appendChild(style);
         }
-        if (!document.getElementById('scan-loading') && !document.getElementById('loading-overlay')) {
-            setInterval(createParticle, 1500);
-            if (!document.getElementById('particle-animation-style')) {
-                const style = document.createElement('style');
-                style.id = 'particle-animation-style';
-                style.textContent = `@keyframes floatParticle { to { transform: translateY(-110vh) rotate(${Math.random() * 720 - 360}deg); opacity: 0; } }`;
-                document.head.appendChild(style);
-            }
-        }
+      }
     </script>
-</body>
+
+    <!-- Enhanced Footer -->
+    <footer
+      class="mt-20 text-center py-12 bg-white/20 dark:bg-gray-900/50 backdrop-blur-sm border-t border-white/20 dark:border-gray-700/50"
+    >
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-center mb-4">
+          <div
+            class="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center mr-3"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              ></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">
+            EASM Scanner
+          </h3>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">
+          External Attack Surface Management Tool
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-500">
+          Empowering cybersecurity professionals with advanced domain
+          intelligence
+        </p>
+      </div>
+    </footer>
+  </body>
 </html>
