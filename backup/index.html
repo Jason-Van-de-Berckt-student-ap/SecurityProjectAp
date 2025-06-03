@@ -1,0 +1,392 @@
+{# templates/index.html #}
+{% extends "base.html" %}
+
+{% block title %}EASM Domain Scanner{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Enhanced tab functionality
+        function showTab(tabName) {
+            const singleScan = document.getElementById('single-scan');
+            const batchScan = document.getElementById('batch-scan');
+            const batchNote = document.getElementById('batch-note');
+            const singleTab = document.getElementById('single-scan-tab');
+            const batchTab = document.getElementById('batch-scan-tab');
+
+            // Fade out current tab
+            singleScan.style.opacity = '0';
+            batchScan.style.opacity = '0';
+
+            setTimeout(() => {
+                singleScan.classList.add('hidden');
+                batchScan.classList.add('hidden');
+                batchNote.classList.add('hidden');
+
+                // Reset tab buttons
+                singleTab.className = 'flex-1 px-6 py-3 text-gray-600 dark:text-gray-300 font-semibold rounded-xl transition-all duration-300 hover:bg-white/50 dark:hover:bg-gray-700/50';
+                batchTab.className = 'flex-1 px-6 py-3 text-gray-600 dark:text-gray-300 font-semibold rounded-xl transition-all duration-300 hover:bg-white/50 dark:hover:bg-gray-700/50';
+
+                // Show selected tab
+                const targetTab = document.getElementById(tabName);
+                const targetButton = document.getElementById(tabName + '-tab');
+
+                targetTab.classList.remove('hidden');
+                targetButton.className = 'flex-1 px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-semibold transition-all duration-300 shadow-md';
+
+                // Show batch note if batch tab is selected
+                if (tabName === 'batch-scan') {
+                    batchNote.classList.remove('hidden');
+                }
+
+                // Fade in new tab
+                setTimeout(() => {
+                    targetTab.style.opacity = '1';
+                }, 50);
+            }, 150);
+        }
+
+        // Reset loading state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('scan-form');
+            const loading = document.getElementById('scan-loading');
+            const timer = document.getElementById('scan-timer');
+
+            if (form) form.classList.remove('hidden');
+            if (loading) loading.classList.add('hidden');
+            if (timer) timer.textContent = '00:00';
+
+            // Initialize to single scan tab on load
+            showTab('single-scan');
+        });
+
+        // Enhanced loading animation with timer
+        (function() {
+            const form = document.getElementById('scan-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Show loading with smooth transition
+                    const loading = document.getElementById('scan-loading');
+                    form.style.opacity = '0';
+
+                    setTimeout(() => {
+                        form.classList.add('hidden');
+                        loading.classList.remove('hidden');
+                        loading.style.opacity = '1';
+                    }, 300);
+
+                    // Start enhanced timer
+                    let startTime = new Date();
+                    const timerElement = document.getElementById('scan-timer');
+
+                    const timerInterval = setInterval(function() {
+                        const now = new Date();
+                        const diff = now - startTime;
+                        const minutes = Math.floor(diff / 60000);
+                        const seconds = Math.floor((diff % 60000) / 1000);
+
+                        if (timerElement) {
+                            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                        }
+                    }, 1000);
+
+                    // Store timer reference for potential cleanup
+                    window.scanTimer = timerInterval;
+                });
+            }
+        })();
+
+        // Add hover effects to form elements
+        document.querySelectorAll('input[type="text"], input[type="file"]').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header with enhanced styling -->
+        <div class="text-center mb-12 animate-fade-in">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg mb-6">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+            </div>
+            <h1 class="text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+                EASM Scanner
+            </h1>
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-8">
+                Comprehensive domain analysis and attack surface mapping tool for cybersecurity professionals
+            </p>
+            <div class="mt-6">
+                <a href="/history" class="inline-flex items-center px-6 py-3 bg-gray-800 dark:bg-gray-700 text-white rounded-xl hover:bg-gray-900 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-105 shadow-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    View Scan History
+                </a>
+            </div>
+        </div>
+
+        <!-- Enhanced Tab Navigation -->
+        <div class="max-w-2xl mx-auto mb-8 animate-slide-up">
+            <div class="flex bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-1 shadow-lg">
+                <button id="single-scan-tab" onclick="showTab('single-scan')"
+                        class="flex-1 px-6 py-3 text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-semibold transition-all duration-300 shadow-md">
+                    <div class="flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
+                        </svg>
+                        Single Domain
+                    </div>
+                </button>
+                <button id="batch-scan-tab" onclick="showTab('batch-scan')"
+                        class="flex-1 px-6 py-3 text-gray-600 dark:text-gray-300 font-semibold rounded-xl transition-all duration-300 hover:bg-white/50 dark:hover:bg-gray-700/50">
+                    <div class="flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        Batch Domains
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Single Domain Scan Form -->
+        <div id="single-scan" class="max-w-2xl mx-auto">
+            <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 dark:border-gray-700/50">
+                <form id="scan-form" action="/scan" method="post">
+                    <div class="mb-8">
+                        <label for="domain" class="block text-gray-800 dark:text-gray-200 font-semibold mb-3 text-lg">
+                            Domain to Scan
+                        </label>
+                        <div class="relative">
+                            <input type="text"
+                                   name="domain"
+                                   id="domain"
+                                   placeholder="example.com"
+                                   required
+                                   class="w-full px-6 py-4 bg-white/80 dark:bg-gray-700/80 border-2 border-gray-200 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 text-lg transition-all duration-300 text-gray-800 dark:text-gray-200">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-6">
+                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Scan Options -->
+                    <div class="mb-8">
+                        <p class="text-gray-800 dark:text-gray-200 font-semibold mb-6 text-lg">Scan Configuration</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer group">
+                                <input type="checkbox" name="dns_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">DNS Records</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Analyze DNS configuration</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer group">
+                                <input type="checkbox" name="ssl_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">SSL Certificate</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Certificate validation</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer group">
+                                <input type="checkbox" name="subdomain_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Subdomain Discovery</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Find hidden subdomains</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer group">
+                                <input type="checkbox" name="related_domains" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Related Domains</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Associated domains</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer group">
+                                <input type="checkbox" name="vuln_scan" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Vulnerability Scan</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Security assessment</p>
+                                </div>
+                            </label>
+                            <label class="flex items-center p-4 bg-white/60 dark:bg-gray-700/60 rounded-xl border-2 border-transparent hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer group">
+                                <input type="checkbox" name="darkweb" checked class="w-5 h-5 text-blue-600 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                <div class="ml-4">
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">Darkweb Scan</span>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Dark web monitoring</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 px-8 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
+                        <div class="flex items-center justify-center">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            Start Security Scan
+                        </div>
+                    </button>
+                </form>
+
+                <!-- Enhanced Loading Animation -->
+                <div id="scan-loading" class="hidden flex flex-col items-center justify-center min-h-[400px]">
+                    <div class="relative mb-8">
+                        <div class="w-20 h-20 border-4 border-blue-200 dark:border-blue-800 rounded-full animate-pulse-slow"></div>
+                        <div class="absolute top-0 left-0 w-20 h-20 border-4 border-transparent border-t-blue-600 rounded-full animate-spin"></div>
+                        <div class="absolute top-2 left-2 w-16 h-16 border-4 border-transparent border-t-indigo-400 rounded-full animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-3">Scanning Domain...</h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-400 mb-2">Deep analysis in progress</p>
+                    <p class="text-gray-500 dark:text-gray-500 mb-6">This comprehensive scan may take several minutes</p>
+                    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl px-6 py-3 shadow-lg">
+                        <p class="text-gray-700 dark:text-gray-300 font-medium">Elapsed Time: <span id="scan-timer" class="font-mono text-blue-600 dark:text-blue-400">00:00</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Domain Scan Form -->
+        <div id="batch-scan" class="max-w-2xl mx-auto hidden">
+            <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 dark:border-gray-700/50">
+                <form action="/batch_scan" method="post" enctype="multipart/form-data">
+                    <div class="mb-8">
+                        <label for="domains_file" class="block text-gray-800 dark:text-gray-200 font-semibold mb-3 text-lg">
+                            Upload Domains File
+                        </label>
+                        <div class="relative">
+                            <input type="file"
+                                   name="domains_file"
+                                   id="domains_file"
+                                   required
+                                   accept=".txt,.csv"
+                                   class="w-full px-6 py-4 bg-white/80 dark:bg-gray-700/80 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 text-lg transition-all duration-300 text-gray-800 dark:text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-3 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl">
+                            <svg class="w-5 h-5 inline mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Upload a .txt file with one domain per line or a .csv file with domains in the first column.
+                        </p>
+                    </div>
+
+                    <button type="submit"
+                            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 px-8 rounded-2xl font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
+                        <div class="flex items-center justify-center">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            Start Batch Scan
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Enhanced Batch Note -->
+        <div id="batch-note" class="max-w-2xl mx-auto mt-6 hidden">
+            <div class="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/30 dark:to-amber-900/30 backdrop-blur-sm rounded-2xl p-6 border border-yellow-200 dark:border-yellow-700 shadow-lg">
+                <div class="flex items-start">
+                    <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                    <div>
+                        <p class="font-semibold text-yellow-800 dark:text-yellow-300 mb-3">Batch Scanning Guidelines</p>
+                        <ul class="space-y-2 text-yellow-700 dark:text-yellow-400">
+                            <li class="flex items-start">
+                                <span class="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                Processing multiple domains requires significant computational resources
+                            </li>
+                            <li class="flex items-start">
+                                <span class="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                Each domain undergoes comprehensive analysis with selected scan types
+                            </li>
+                            <li class="flex items-start">
+                                <span class="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                Results are compiled into a unified security report
+                            </li>
+                            <li class="flex items-start">
+                                <span class="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                Optimal performance with batches of 20-30 domains maximum
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Features Section -->
+        <div class="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in">
+            <div class="group">
+                <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 dark:border-gray-700/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Infrastructure Analysis</h3>
+                    <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Comprehensive DNS analysis, SSL certificate verification, and subdomain discovery to map your complete digital infrastructure.</p>
+                </div>
+            </div>
+            <div class="group">
+                <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 dark:border-gray-700/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl">
+                    <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Related Domain Detection</h3>
+                    <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Identify domains connected through organizational structure, shared infrastructure, or operational relationships.</p>
+                </div>
+            </div>
+            <div class="group">
+                <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20 dark:border-gray-700/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl">
+                    <div class="w-16 h-16 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Security Assessment</h3>
+                    <p class="text-gray-600 dark:text-gray-400 leading-relaxed">Advanced vulnerability scanning, security header analysis, and comprehensive attack surface mapping.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Stats/Info Section -->
+        <div class="mt-16 bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm rounded-3xl p-8 border border-white/20 dark:border-gray-700/50">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4">Comprehensive Security Intelligence</h2>
+                <p class="text-gray-600 dark:text-gray-400 text-lg max-w-3xl mx-auto">Our EASM platform provides enterprise-grade domain analysis with cutting-edge threat intelligence and real-time monitoring capabilities.</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">50K+</div>
+                    <div class="text-gray-600 dark:text-gray-400">Domains Scanned</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">99.9%</div>
+                    <div class="text-gray-600 dark:text-gray-400">Accuracy Rate</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-green-600 dark:text-green-400 mb-2">24/7</div>
+                    <div class="text-gray-600 dark:text-gray-400">Monitoring</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-red-600 dark:text-red-400 mb-2">Real-time</div>
+                    <div class="text-gray-600 dark:text-gray-400">Threat Intel</div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
