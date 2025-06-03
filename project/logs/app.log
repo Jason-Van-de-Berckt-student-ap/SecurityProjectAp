@@ -277,3 +277,15 @@
 2025-06-03 21:35:16,059 - easm.app - INFO - Logging database tables initialized successfully.
 2025-06-03 21:35:16,060 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
 2025-06-03 21:35:16,063 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 21:35:19,663 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 21:35:19,701 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:35:20,336 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 21:35:20,356 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:35:20,721 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 21:35:20,742 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:35:20,950 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 21:35:20,971 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:35:21,152 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 21:35:21,173 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:35:21,400 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 21:35:21,422 - easm.app - INFO - [user_action] User action: GET static
