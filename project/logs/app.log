@@ -1,0 +1,287 @@
+2025-06-03 13:10:27,244 - easm.app - ERROR - Failed to initialize log tables: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 195, in _init_log_tables
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:10:27,247 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:10:36,131 - easm.app - ERROR - Failed to initialize log tables: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 195, in _init_log_tables
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:10:36,134 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:10:37,003 - easm.app - ERROR - Failed to initialize log tables: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 195, in _init_log_tables
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:10:37,005 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:11:00,237 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:11:00,238 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:04,749 - easm.app - INFO - [user_action] User action: GET auth.register
+2025-06-03 13:11:04,749 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:11,305 - easm.app - INFO - [user_action] User action: GET batch_scan.batch_results_view
+2025-06-03 13:11:11,305 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:11,358 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:11:11,359 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:17,804 - easm.app - INFO - [user_action] User action: GET batch_scan.batch_results_view
+2025-06-03 13:11:17,804 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:17,831 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:11:17,831 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:27,045 - easm.app - ERROR - Failed to initialize log tables: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 195, in _init_log_tables
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:27,047 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:11:27,051 - easm.app - INFO - [user_action] User action: GET batch_scan.batch_results_view
+2025-06-03 13:11:27,051 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:27,078 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:11:27,079 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:27,866 - easm.app - ERROR - Failed to initialize log tables: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 195, in _init_log_tables
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:27,869 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:11:30,547 - easm.app - INFO - [user_action] User action: GET batch_scan.batch_results_view
+2025-06-03 13:11:30,548 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:30,580 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:11:30,580 - easm.app - ERROR - Failed to store log event to database: 'DatabaseManager' object has no attribute 'execute_query'
+Traceback (most recent call last):
+  File "C:\Users\okomh\Documents\2ITCSC2\Semester_2\Security Project\SecurityProjectAp\project\services\logging_service.py", line 392, in _store_log_event
+    self.db_manager.execute_query("""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DatabaseManager' object has no attribute 'execute_query'
+2025-06-03 13:11:59,875 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:11:59,876 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:12:00,412 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:12:00,413 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:12:00,595 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:12:00,596 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:16:56,933 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:16:56,934 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:16:57,144 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:16:57,145 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:16:57,541 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:16:57,542 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:17:06,145 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:17:06,146 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:17:06,471 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:17:06,472 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:17:06,671 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:17:06,672 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:17:31,875 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:17:31,877 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:17:32,446 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:17:32,447 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:17:32,772 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:17:32,773 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:25,813 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:25,815 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:26,025 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:26,026 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:26,258 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:26,259 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:32,169 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:32,170 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:32,353 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:32,354 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:32,594 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:32,595 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:38,805 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:38,806 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:39,470 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:39,471 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:39,669 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:39,669 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:56,142 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:56,143 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:56,378 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:56,379 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:56,582 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:56,583 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:18:58,211 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:18:58,212 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:19:17,678 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:19:17,679 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:19:18,663 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:19:18,665 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:19:33,866 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:19:33,867 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:19:33,872 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:19:34,167 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:19:34,169 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:19:34,174 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:19:34,380 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:19:34,381 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:19:34,384 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:19:34,504 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:19:34,505 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:19:34,508 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:19:57,809 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 13:19:57,857 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:20:01,875 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 13:20:01,906 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:20:03,609 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:20:03,610 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:20:03,613 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:20:03,813 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:20:03,814 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:20:03,818 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:20:03,979 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:20:03,981 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:20:03,984 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:20:04,327 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:20:04,328 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:20:04,331 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:20:06,220 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 13:20:06,268 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:22:22,770 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:22:22,771 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:22:22,774 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:22:23,609 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:22:23,610 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:22:23,614 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:22:49,178 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 13:22:56,284 - easm.app - INFO - [user_action] User action: GET auth.register
+2025-06-03 13:23:01,832 - easm.app - INFO - [user_action] User action: GET single_scan.view_scan_results
+2025-06-03 13:23:01,893 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:23:06,939 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 13:23:06,982 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:23:09,118 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:23:14,356 - easm.app - INFO - [user_action] User action: GET auth.register
+2025-06-03 13:23:20,834 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 13:23:20,871 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:23:26,920 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:23:30,748 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 13:23:32,618 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 13:24:32,469 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:24:43,298 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 13:25:47,047 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:25:47,049 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:25:47,052 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:25:47,946 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:25:47,947 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:25:47,950 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:28:48,339 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:28:48,340 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:28:48,343 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:28:49,163 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:28:49,164 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:28:49,167 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:29:09,577 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 13:29:53,028 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:29:53,029 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:29:53,033 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:29:53,162 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 13:29:53,199 - easm.app - INFO - [user_action] User action: GET health.basic_health
+2025-06-03 13:29:53,205 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:29:53,219 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 13:30:09,919 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:30:09,920 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:30:09,924 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:30:10,059 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 13:30:10,077 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 13:30:10,091 - easm.app - INFO - [user_action] User action: POST None
+2025-06-03 13:30:10,101 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 13:30:10,110 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 13:30:32,587 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:30:32,588 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:30:32,591 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:31:44,000 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:31:44,001 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:31:44,005 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:31:44,926 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:31:44,927 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:31:44,932 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:34:47,880 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:34:47,881 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:34:47,927 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:34:48,743 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:34:48,744 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:34:48,747 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:34:59,681 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 13:34:59,724 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:35:02,100 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:35:10,565 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 13:35:21,777 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 13:35:28,442 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 13:35:28,471 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:35:30,648 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 13:35:30,668 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:36:29,356 - easm.app - INFO - [user_action] User action: GET auth.register
+2025-06-03 13:36:34,534 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:40:20,203 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:40:20,204 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:40:20,207 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:40:25,417 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 13:41:05,967 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 13:42:17,561 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:42:17,562 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:42:17,566 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:42:37,561 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:42:37,562 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:42:37,565 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:42:38,365 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:42:38,365 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:42:38,369 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:43:14,899 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 13:44:45,060 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 13:44:45,061 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 13:44:45,064 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 13:45:00,142 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 13:45:00,213 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 13:45:00,252 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 13:49:29,648 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 13:49:29,691 - easm.app - INFO - [user_action] User action: GET static

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - EASM Tool</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+      }
+      .login-container {
+        max-width: 400px;
+        margin: 0 auto;
+      }
+      .card {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 15px;
+      }
+      .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0 !important;
+        text-align: center;
+        padding: 2rem 1rem 1rem;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 25px;
+      }
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+      }
+      .form-control {
+        border-radius: 25px;
+        padding: 12px 20px;
+      }
+      .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+      }
+      .alert {
+        border-radius: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="login-container">
+        <div class="card">
+          <div class="card-header">
+            <h4 class="mb-0">
+              <i class="fas fa-shield-alt me-2"></i>
+              EASM Tool Login
+            </h4>
+            <p class="mb-0 mt-2">External Attack Surface Management</p>
+          </div>
+          <div class="card-body p-4">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %} {%
+            if messages %} {% for category, message in messages %}
+            <div
+              class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+              role="alert"
+            >
+              {{ message }}
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+              ></button>
+            </div>
+            {% endfor %} {% endif %} {% endwith %}
+
+            <form method="POST" id="loginForm">
+              <div class="mb-3">
+                <label for="username" class="form-label">
+                  <i class="fas fa-user me-1"></i>Username
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="username"
+                  name="username"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="password" class="form-label">
+                  <i class="fas fa-lock me-1"></i>Password
+                </label>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  name="password"
+                  required
+                />
+              </div>
+
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="fas fa-sign-in-alt me-2"></i>Login
+                </button>
+              </div>
+            </form>
+
+            <hr class="my-4" />
+
+            <div class="text-center">
+              <p class="mb-0">Don't have an account?</p>
+              <a
+                href="{{ url_for('auth.register') }}"
+                class="btn btn-outline-primary btn-sm mt-2"
+              >
+                <i class="fas fa-user-plus me-1"></i>Register
+              </a>
+            </div>
+
+            <div class="text-center mt-3">
+              <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Default admin credentials: admin / [generated password]
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (e) {
+          const submitBtn = this.querySelector('button[type="submit"]');
+          submitBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+          submitBtn.disabled = true;
+        });
+    </script>
+  </body>
+</html>

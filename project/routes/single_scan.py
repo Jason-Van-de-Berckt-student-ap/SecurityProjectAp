@@ -2,13 +2,14 @@
 Single domain scan routes for the EASM application.
 These routes handle individual domain scanning.
 """
-from flask import Blueprint, render_template, request, jsonify, send_from_directory, send_file
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, send_file, g
 import json
 from datetime import datetime
 import sqlite3,os
 from pathlib import Path
 import csv
 import io
+import time
 
 # Import services
 from services.dns_service import get_dns_records
@@ -18,6 +19,15 @@ from services.subdomain_service import find_subdomains
 from services.domain_service import find_related_domains
 from services.Darkweb import check_ahmia
 from config import BRAVE_API_KEY
+
+# Import optimized services
+from services.optimized_scanner import optimized_scanner, validate_domain
+from services.background_tasks import get_task_manager, submit_background_task
+from services.streaming_export import get_db_streaming_exporter
+
+# Import authentication and logging
+from services.auth_service import login_required, require_permission
+from services.logging_service import log_user_action, get_logging_service
 
 # Create blueprint
 single_scan_bp = Blueprint('single_scan', __name__)
@@ -135,70 +145,72 @@ def scan_history():
                              error=str(e))
 
 @single_scan_bp.route('/scan', methods=['POST'])
+@login_required
+@require_permission('scan_domains')
+@log_user_action('domain_scan')
 def scan_domain():
-    """Process a single domain scan."""
-    domain = request.form['domain']
+    """Process a single domain scan using optimized scanner."""
+    domain = request.form['domain'].strip()
+    
+    # Log scan initiation
+    logging_service = get_logging_service()
+    logging_service.log_user_action(
+        user_id=g.current_user.id,
+        username=g.current_user.username,
+        action='domain_scan_initiated',
+        resource=domain,
+        details={'scan_options': dict(request.form)}
+    )
+    
+    # Validate domain input
+    if not validate_domain(domain):
+        logging_service.log_security_event(
+            event_type='invalid_input',
+            severity='medium',
+            description=f'Invalid domain format attempted: {domain}',
+            user_id=g.current_user.id,
+            ip_address=request.remote_addr
+        )
+        return jsonify({'error': 'Invalid domain format'}), 400
+    
     scan_options = {
         'dns_scan': 'dns_scan' in request.form,
         'ssl_scan': 'ssl_scan' in request.form,
         'subdomain_scan': 'subdomain_scan' in request.form,
         'related_domains': 'related_domains' in request.form,
         'vuln_scan': 'vuln_scan' in request.form,
-        'darkweb':'darkweb' in request.form
+        'darkweb': 'darkweb' in request.form
     }
     
-    # Initialize results dictionary
-    results = {
-        'dns_info': {},
-        'ssl_info': {},
-        'vulnerabilities': [],
-        'subdomains': [],
-        'related_domains': [],
-        'onion_links': {'interested_links': [], 'other_links': []}
-    }
+    # Check if background processing is requested
+    background_scan = 'background' in request.form
     
     try:
-        # Perform scans based on selected options
-        if scan_options['dns_scan']:
-            print(f"Starting DNS scan for {domain}")
-            results['dns_info'] = get_dns_records(domain)
-        
-        if scan_options['ssl_scan']:
-            print(f"Starting SSL scan for {domain}")
-            results['ssl_info'] = get_ssl_info(domain)
-        
-        if scan_options['vuln_scan']:
-            print(f"Starting vulnerability scan for {domain}")
-            results['vulnerabilities'] = check_vulnerabilities_alternative(domain)
-        
-        if scan_options['subdomain_scan']:
-            print(f"Starting subdomain discovery for {domain}")
-            results['subdomains'] = find_subdomains(domain)
-        
-        if scan_options['related_domains']:
-            print(f"Starting related domain discovery for {domain}")
-            results['related_domains'] = find_related_domains(domain, BRAVE_API_KEY)
+        if background_scan:
+            # Submit as background task
+            task_id = submit_background_task(
+                f"Single Domain Scan: {domain}",
+                optimized_scanner.scan_domain_parallel,
+                domain, scan_options, BRAVE_API_KEY
+            )
             
-        if scan_options['darkweb']:
-            print(f"Darkweb scan uitvoeren op {domain}")
-            darkweb_results = check_ahmia(domain)
-            results['onion_links'] = darkweb_results
-        
-        # Store results in database
-        conn = sqlite3.connect('easm.db')
-        c = conn.cursor()
-        c.execute('''INSERT INTO scans 
-                     (domain, scan_date, dns_records, ssl_info, vulnerabilities, 
-                      subdomains, related_domains, onion_links)
-                     VALUES (?, ?, ?, ?, ?, ?, ?,?)''',
-                  (domain, 
-                   datetime.now(),
-                   json.dumps(results['dns_info']),
-                   json.dumps(results['ssl_info']),
-                   json.dumps(results['vulnerabilities']),
-                   json.dumps(results['subdomains']),
-                   json.dumps(results['related_domains']),
-                   json.dumps(results['onion_links'])))
+            return jsonify({
+                'status': 'submitted',
+                'task_id': task_id,
+                'message': f'Scan for {domain} submitted as background task'
+            })
+        else:
+            # Execute scan immediately with optimized scanner
+            print(f"Starting optimized scan for {domain}")
+            results = optimized_scanner.scan_domain_parallel(domain, scan_options, BRAVE_API_KEY)
+            
+            # Results are already stored in database by optimized scanner
+            print(f"Completed optimized scan for {domain}")
+            
+            return render_template('results.html', 
+                                 domain=domain, 
+                                 results=results,
+                                 scan_options=scan_options)
         conn.commit()
         conn.close()
         cleanup_old_scans(domain)
@@ -434,3 +446,108 @@ def download_scan_results(domain):
     except Exception as e:
         print(f"Error in download_scan_results: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# New optimized routes
+
+@single_scan_bp.route('/task_status/<task_id>')
+def get_task_status(task_id):
+    """Get status of a background task."""
+    try:
+        task_manager = get_task_manager()
+        status = task_manager.get_task_status(task_id)
+        
+        if status is None:
+            return jsonify({'error': 'Task not found'}), 404
+        
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@single_scan_bp.route('/tasks')
+def list_tasks():
+    """List all background tasks."""
+    try:
+        task_manager = get_task_manager()
+        tasks = task_manager.get_all_tasks(limit=50)
+        
+        return render_template('tasks.html', tasks=tasks)
+    except Exception as e:
+        return render_template('error.html', error=str(e))
+
+@single_scan_bp.route('/export/csv')
+def export_csv():
+    """Export scan results as streaming CSV."""
+    try:
+        # Get filter parameters
+        filters = {}
+        if request.args.get('domain'):
+            filters['domain'] = request.args.get('domain')
+        if request.args.get('scan_type'):
+            filters['scan_type'] = request.args.get('scan_type')
+        if request.args.get('start_date'):
+            filters['start_date'] = float(request.args.get('start_date'))
+        if request.args.get('end_date'):
+            filters['end_date'] = float(request.args.get('end_date'))
+        
+        # Generate filename
+        filename = f"scan_results_export_{int(time.time())}.csv"
+        
+        # Get streaming exporter and return response
+        exporter = get_db_streaming_exporter()
+        return exporter.export_scan_results(filters, filename)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@single_scan_bp.route('/export/summary')
+def export_summary():
+    """Get summary of exportable data."""
+    try:
+        filters = {}
+        if request.args.get('domain'):
+            filters['domain'] = request.args.get('domain')
+        if request.args.get('scan_type'):
+            filters['scan_type'] = request.args.get('scan_type')
+        if request.args.get('start_date'):
+            filters['start_date'] = float(request.args.get('start_date'))
+        if request.args.get('end_date'):
+            filters['end_date'] = float(request.args.get('end_date'))
+        
+        exporter = get_db_streaming_exporter()
+        summary = exporter.get_export_summary(filters)
+        
+        return jsonify(summary)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@single_scan_bp.route('/system/stats')
+def system_stats():
+    """Get system performance statistics."""
+    try:
+        from services.database_manager import get_db_manager
+        from services.cache_manager import get_cache_manager
+        from services.rate_limiter import get_service_stats
+        
+        db_manager = get_db_manager()
+        cache_manager = get_cache_manager()
+        task_manager = get_task_manager()
+        
+        stats = {
+            'database': db_manager.get_scan_statistics(),
+            'cache': cache_manager.get_cache_statistics(),
+            'tasks': task_manager.get_queue_stats(),
+            'rate_limiting': get_service_stats(),
+            'timestamp': time.time()
+        }
+        
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@single_scan_bp.route('/system/dashboard')
+def system_dashboard():
+    """Render system monitoring dashboard."""
+    try:
+        return render_template('dashboard.html')
+    except Exception as e:
+        return render_template('error.html', error=str(e))

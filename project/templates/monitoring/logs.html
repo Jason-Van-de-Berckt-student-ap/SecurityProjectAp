@@ -1,0 +1,214 @@
+<!-- templates/monitoring/logs.html -->
+{% extends "base.html" %}
+
+{% block title %}System Logs - EASM{% endblock %}
+
+{% block head_extra %}
+<script>
+function filterLogs() {
+    const logType = document.getElementById('log-type').value;
+    const severity = document.getElementById('severity').value;
+    const timeRange = document.getElementById('time-range').value;
+    
+    const params = new URLSearchParams();
+    if (logType) params.append('log_type', logType);
+    if (severity) params.append('severity', severity);
+    if (timeRange) params.append('time_range', timeRange);
+    
+    window.location.search = params.toString();
+}
+
+function refreshLogs() {
+    window.location.reload();
+}
+
+// Auto-refresh every 60 seconds
+setInterval(refreshLogs, 60000);
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+            System Logs
+        </h1>
+        <p class="text-gray-600 dark:text-gray-300">
+            Monitor system events and user activities
+        </p>
+    </div>
+
+    <!-- Log Filters -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Filters</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label for="log-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Log Type
+                </label>
+                <select id="log-type" onchange="filterLogs()" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="">All Types</option>
+                    <option value="user_action" {% if request.args.get('log_type') == 'user_action' %}selected{% endif %}>User Actions</option>
+                    <option value="security" {% if request.args.get('log_type') == 'security' %}selected{% endif %}>Security Events</option>
+                    <option value="performance" {% if request.args.get('log_type') == 'performance' %}selected{% endif %}>Performance</option>
+                    <option value="error" {% if request.args.get('log_type') == 'error' %}selected{% endif %}>Errors</option>
+                    <option value="audit" {% if request.args.get('log_type') == 'audit' %}selected{% endif %}>Audit Trail</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="severity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Severity
+                </label>
+                <select id="severity" onchange="filterLogs()" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="">All Severities</option>
+                    <option value="low" {% if request.args.get('severity') == 'low' %}selected{% endif %}>Low</option>
+                    <option value="medium" {% if request.args.get('severity') == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="high" {% if request.args.get('severity') == 'high' %}selected{% endif %}>High</option>
+                    <option value="critical" {% if request.args.get('severity') == 'critical' %}selected{% endif %}>Critical</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="time-range" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Time Range
+                </label>
+                <select id="time-range" onchange="filterLogs()" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <option value="1h" {% if request.args.get('time_range') == '1h' %}selected{% endif %}>Last Hour</option>
+                    <option value="24h" {% if request.args.get('time_range') == '24h' %}selected{% endif %}>Last 24 Hours</option>
+                    <option value="7d" {% if request.args.get('time_range') == '7d' %}selected{% endif %}>Last 7 Days</option>
+                    <option value="30d" {% if request.args.get('time_range') == '30d' %}selected{% endif %}>Last 30 Days</option>
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button onclick="refreshLogs()" 
+                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Entries -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                Log Entries ({{ logs|length }} entries)
+            </h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Timestamp
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Type
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Severity
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            User
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Action/Event
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Details
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for log in logs %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                {% if log.log_type == 'user_action' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{% 
+                                elif log.log_type == 'security' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% 
+                                elif log.log_type == 'performance' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% 
+                                elif log.log_type == 'error' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% 
+                                else %}bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200{% endif %}">
+                                {{ log.log_type|replace('_', ' ')|title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if log.severity %}
+                            <span class="px-2 py-1 text-xs font-medium rounded-full
+                                {% if log.severity == 'critical' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% 
+                                elif log.severity == 'high' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200{% 
+                                elif log.severity == 'medium' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{% 
+                                else %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200{% endif %}">
+                                {{ log.severity|title }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {{ log.username or 'System' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                            <div class="max-w-xs truncate">
+                                {{ log.action or log.event_type or log.message }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            <div class="max-w-md">
+                                {% if log.resource %}
+                                <div><strong>Resource:</strong> {{ log.resource }}</div>
+                                {% endif %}
+                                {% if log.ip_address %}
+                                <div><strong>IP:</strong> {{ log.ip_address }}</div>
+                                {% endif %}
+                                {% if log.details %}
+                                <div class="mt-1 text-xs">
+                                    {{ log.details|truncate(100) }}
+                                </div>
+                                {% endif %}
+                                {% if log.description %}
+                                <div class="mt-1 text-xs">
+                                    {{ log.description|truncate(100) }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if not logs %}
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No log entries</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                No log entries match your current filters.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Export Options -->
+    <div class="mt-6 flex justify-end space-x-4">
+        <a href="/monitoring/logs/export?format=csv&{{ request.query_string.decode() }}" 
+           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+            Export CSV
+        </a>
+        <a href="/monitoring/logs/export?format=json&{{ request.query_string.decode() }}" 
+           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Export JSON
+        </a>
+    </div>
+</div>
+{% endblock %}

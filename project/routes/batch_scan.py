@@ -2,7 +2,7 @@
 Batch domain scan routes for the EASM application.
 These routes handle batch processing of multiple domains.
 """
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, send_from_directory
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, send_from_directory, g
 import json
 import os
 import time
@@ -14,8 +14,6 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from pathlib import Path
 
-
-
 # Import services
 from services.dns_service import get_dns_records
 from services.ssl_service import get_ssl_info
@@ -24,6 +22,15 @@ from services.subdomain_service import find_subdomains
 from services.domain_service import find_related_domains
 from services.Darkweb import check_ahmia
 from config import BRAVE_API_KEY
+
+# Import optimized services
+from services.optimized_scanner import optimized_scanner, validate_domain
+from services.background_tasks import submit_background_task, get_task_manager, background_batch_scan
+from services.streaming_export import get_db_streaming_exporter
+
+# Import authentication and logging
+from services.auth_service import login_required, require_permission
+from services.logging_service import log_user_action, get_logging_service
 
 # Import utilities
 from routes.utils import allowed_file, export_to_csv
@@ -90,6 +97,9 @@ def create_batch_zip(batch_id, batch_dir):
 
 # Routes
 @batch_scan_bp.route('/batch_scan', methods=['POST'])
+@login_required
+@require_permission('batch_scan')
+@log_user_action('batch_scan_upload')
 def batch_scan():
     """Process a batch domain scan from an uploaded file."""
     ensure_directories()
@@ -127,6 +137,9 @@ def batch_scan():
     return jsonify({'error': 'File type not allowed'}), 400
 
 @batch_scan_bp.route('/process_batch_validation', methods=['POST'])
+@login_required
+@require_permission('batch_scan')
+@log_user_action('batch_scan_validation')
 def process_batch_validation():
     """Process validated domains from the batch upload."""
     # Get domains from form with better error handling
@@ -174,8 +187,11 @@ def process_batch_validation():
     return redirect(url_for('batch_scan.batch_results_view', batch_id=batch_id))
 
 @batch_scan_bp.route('/process_batch/<batch_id>', methods=['POST'])
+@login_required
+@require_permission('batch_scan')
+@log_user_action('batch_scan_execute')
 def process_batch(batch_id):
-    """Process the batch of domains and generate results."""
+    """Process the batch of domains using optimized scanner."""
     batch_dir = os.path.join('results', batch_id)
     
     # Read domains from the stored file
@@ -186,84 +202,33 @@ def process_batch(batch_id):
     with open(os.path.join(batch_dir, 'options.json'), 'r') as f:
         scan_options = json.load(f)
     
-    # Process each domain
-    all_results = {}
-    completed_domains = 0
+    # Check if background processing is requested
+    background_process = request.form.get('background', False)
     
-    for i, domain in enumerate(domains):
-        try:
-            print(f"Processing domain {i+1}/{len(domains)}: {domain}")
-            
-            # Initialize results dictionary
-            results = {
-                'dns_info': {},
-                'ssl_info': {},
-                'vulnerabilities': [],
-                'subdomains': [],
-                'related_domains': [],
-                'onion_links': {'interested_links': [], 'other_links': []}
-            }
-            
-            # Perform scans based on selected options
-            if scan_options['dns_scan']:
-                print(f"Starting DNS scan for {domain}")
-                results['dns_info'] = get_dns_records(domain)
-            
-            if scan_options['ssl_scan']:
-                print(f"Starting SSL scan for {domain}")
-                results['ssl_info'] = get_ssl_info(domain)
-            
-            if scan_options['vuln_scan']:
-                print(f"Starting vulnerability scan for {domain}")
-                results['vulnerabilities'] = check_vulnerabilities_alternative(domain)
-            
-            if scan_options['subdomain_scan']:
-                print(f"Starting subdomain discovery for {domain}")
-                results['subdomains'] = find_subdomains(domain)
-            
-            if scan_options['related_domains']:
-                print(f"Starting related domain discovery for {domain}")
-                results['related_domains'] = find_related_domains(domain, BRAVE_API_KEY)
-                
-            if scan_options['darkweb']:
-                print(f"Starting darkweb scan for {domain}")
-                results['onion_links'] = check_ahmia(domain)
-            
-            # Store results in database
-            conn = sqlite3.connect('easm.db')
-            c = conn.cursor()
-            c.execute('''INSERT INTO scans 
-                         (domain, scan_date, dns_records, ssl_info, vulnerabilities, 
-                          subdomains, related_domains, onion_links, batch_id, is_batch_scan)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (domain, 
-                       datetime.now(),
-                       json.dumps(results['dns_info']),
-                       json.dumps(results['ssl_info']),
-                       json.dumps(results['vulnerabilities']),
-                       json.dumps(results['subdomains']),
-                       json.dumps(results['related_domains']),
-                       json.dumps(results['onion_links']),
-                       batch_id,
-                       1))
-            conn.commit()
-            # Opruimen van oude scans voor dit domein
-            cleanup_old_scans(domain)
-            
-            # Update batch progress
-            completed_domains += 1
-            c.execute('''UPDATE batch_scans 
-                         SET completed_domains = ?, 
-                             status = CASE 
-                                WHEN ? = total_domains THEN 'completed'
-                                ELSE 'in_progress'
-                             END
-                         WHERE batch_id = ?''',
-                      (completed_domains, completed_domains, batch_id))
-            conn.commit()
-            conn.close()
-            
-            # Export results to individual CSV
+    if background_process:
+        # Submit as background task
+        task_id = submit_background_task(
+            f"Batch Scan: {len(domains)} domains",
+            optimized_scanner.scan_domains_batch_parallel,
+            domains, scan_options, BRAVE_API_KEY
+        )
+        
+        return jsonify({
+            'status': 'submitted',
+            'task_id': task_id,
+            'batch_id': batch_id,
+            'message': f'Batch scan for {len(domains)} domains submitted as background task'
+        })
+    
+    # Process immediately with optimized scanner
+    print(f"Starting optimized batch scan for {len(domains)} domains")
+    all_results = optimized_scanner.scan_domains_batch_parallel(domains, scan_options, BRAVE_API_KEY)
+    
+    # Export individual CSV files for each domain
+    completed_domains = 0
+    for domain, domain_result in all_results.items():
+        if domain_result['status'] == 'completed':
+            results = domain_result['results']
             csv_file = f"{domain}.csv"
             csv_path = os.path.join(batch_dir, csv_file)
             
@@ -272,63 +237,46 @@ def process_batch(batch_id):
                 writer = csv.writer(f)
                 writer.writerow(['Category', 'Finding', 'Details'])
                 
-                # Write DNS records
-                for record_type, records in results['dns_info'].items():
+                # Write scan results to CSV
+                for record_type, records in results.get('dns_info', {}).items():
                     for record in records:
                         writer.writerow(['DNS Record', record_type, record])
                 
-                # Write vulnerabilities
-                for vuln in results['vulnerabilities']:
+                for vuln in results.get('vulnerabilities', []):
                     writer.writerow(['Vulnerability', 
                                    f"{vuln['title']} ({vuln['severity']})", 
                                    vuln['description']])
                 
-                # Write subdomains
-                for sub in results['subdomains']:
+                for sub in results.get('subdomains', []):
                     writer.writerow(['Subdomain', 
                                    sub['subdomain'], 
                                    f"IP: {sub['ip']}, Status: {sub['status']}"])
                 
-                # Write related domains
-                for related in results['related_domains']:
+                for related in results.get('related_domains', []):
                     writer.writerow(['Related Domain',
                                    f"{related['domain']} ({related['confidence']})",
                                    f"Type: {related['relation_type']}, Evidence: {related['evidence']}"])
                 
                 # Write darkweb links
-                if scan_options['darkweb']:
-                    for link in results['onion_links'].get('interested_links', []):
-                        writer.writerow(['Darkweb Link (Interesting)', link, ''])
-                    for link in results['onion_links'].get('other_links', []):
-                        writer.writerow(['Darkweb Link', link, ''])
+                onion_links = results.get('onion_links', {})
+                for link in onion_links.get('interested_links', []):
+                    writer.writerow(['Darkweb Link (Interesting)', link, ''])
+                for link in onion_links.get('other_links', []):
+                    writer.writerow(['Darkweb Link', link, ''])
             
-            # Store results for this domain
-            all_results[domain] = {
-                'status': 'completed',
-                'results': results,
-                'csv_file': csv_file
-            }
-            
-        except Exception as e:
-            print(f"Error scanning domain {domain}: {str(e)}")
-            all_results[domain] = {
-                'status': 'error',
-                'error': str(e)
-            }
-              # Update batch progress even for failed scans
-            conn = sqlite3.connect('easm.db')
-            c = conn.cursor()
+            # Add CSV file reference to result
+            all_results[domain]['csv_file'] = csv_file
             completed_domains += 1
-            c.execute('''UPDATE batch_scans
-                         SET completed_domains = ?, 
-                             status = CASE 
-                                WHEN ? = total_domains THEN 'completed'
-                                ELSE 'in_progress'
-                             END
-                         WHERE batch_id = ?''',
-                      (completed_domains, completed_domains, batch_id))
-            conn.commit()
-            conn.close()
+    
+    # Update batch status in database
+    conn = sqlite3.connect('easm.db')
+    c = conn.cursor()
+    c.execute('''UPDATE batch_scans 
+                 SET completed_domains = ?, status = 'completed'
+                 WHERE batch_id = ?''',
+              (completed_domains, batch_id))
+    conn.commit()
+    conn.close()
     
     # Save all results to a JSON file
     with open(os.path.join(batch_dir, 'all_results.json'), 'w') as f:
@@ -339,7 +287,8 @@ def process_batch(batch_id):
     if not zip_filename:
         zip_filename = f'batch_results_{batch_id}.zip'  # fallback name
     
-    # Return the complete results page instead of just a status
+    print(f"Completed optimized batch scan for {len(domains)} domains")
+    
     return render_template('batch_complete.html',
                          batch_id=batch_id,
                          results=all_results,

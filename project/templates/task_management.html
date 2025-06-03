@@ -1,0 +1,855 @@
+{% extends "base.html" %} {% block title %}Task Management - EASM{% endblock %}
+{% block content %}
+<div
+  class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900"
+>
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">
+        Background Task Management
+      </h1>
+      <p class="text-lg text-gray-600 dark:text-gray-300">
+        Monitor and manage background scanning tasks
+      </p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+      <div class="flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex flex-wrap gap-4">
+          <button
+            id="refreshTasks"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <i class="fas fa-sync-alt mr-2"></i>Refresh
+          </button>
+          <button
+            id="clearCompleted"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <i class="fas fa-check mr-2"></i>Clear Completed
+          </button>
+          <button
+            id="cancelAll"
+            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            <i class="fas fa-stop mr-2"></i>Cancel All
+          </button>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <label class="text-sm text-gray-600 dark:text-gray-400"
+            >Filter:</label
+          >
+          <select
+            id="statusFilter"
+            class="border border-gray-300 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
+            <option value="">All Tasks</option>
+            <option value="pending">Pending</option>
+            <option value="running">Running</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+        <div
+          class="text-2xl font-bold text-gray-600 dark:text-gray-300"
+          id="totalTasks"
+        >
+          0
+        </div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Total</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+        <div class="text-2xl font-bold text-yellow-600" id="pendingTasks">
+          0
+        </div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Pending</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+        <div class="text-2xl font-bold text-blue-600" id="runningTasks">0</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Running</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+        <div class="text-2xl font-bold text-green-600" id="completedTasks">
+          0
+        </div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Completed</div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+        <div class="text-2xl font-bold text-red-600" id="failedTasks">0</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Failed</div>
+      </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+          <i class="fas fa-list mr-2"></i>All Tasks
+        </h3>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                <input type="checkbox" id="selectAll" class="rounded" />
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Task ID
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Type
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Target
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Status
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Progress
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Started
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Duration
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            id="tasksTableBody"
+            class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+          >
+            <tr>
+              <td
+                colspan="9"
+                class="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
+              >
+                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                <div>Loading tasks...</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div id="pagination" class="flex justify-between items-center mt-6 hidden">
+      <div class="text-sm text-gray-500 dark:text-gray-400">
+        Showing <span id="showingStart">1</span> to
+        <span id="showingEnd">10</span> of <span id="totalCount">0</span> tasks
+      </div>
+      <div class="flex space-x-2">
+        <button
+          id="prevPage"
+          class="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <span id="pageNumbers" class="flex space-x-1"></span>
+        <button
+          id="nextPage"
+          class="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div
+  id="taskModal"
+  class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden"
+>
+  <div
+    class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800"
+  >
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+        Task Details
+      </h3>
+      <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <div id="taskDetails" class="space-y-4">
+      <!-- Task details will be populated here -->
+    </div>
+
+    <div class="flex justify-end space-x-4 mt-6">
+      <button
+        id="modalCancel"
+        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Cancel Task
+      </button>
+      <button
+        id="modalClose"
+        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+  let allTasks = [];
+  let filteredTasks = [];
+  let currentPage = 1;
+  let tasksPerPage = 20;
+  let selectedTasks = new Set();
+
+  // Initialize
+  document.addEventListener("DOMContentLoaded", function () {
+    loadTasks();
+    setupEventListeners();
+
+    // Auto-refresh every 5 seconds
+    setInterval(loadTasks, 5000);
+  });
+
+  function setupEventListeners() {
+    document
+      .getElementById("refreshTasks")
+      .addEventListener("click", loadTasks);
+    document
+      .getElementById("clearCompleted")
+      .addEventListener("click", clearCompletedTasks);
+    document
+      .getElementById("cancelAll")
+      .addEventListener("click", cancelAllTasks);
+    document
+      .getElementById("statusFilter")
+      .addEventListener("change", applyFilter);
+    document
+      .getElementById("selectAll")
+      .addEventListener("change", toggleSelectAll);
+    document
+      .getElementById("closeModal")
+      .addEventListener("click", closeTaskModal);
+    document
+      .getElementById("modalClose")
+      .addEventListener("click", closeTaskModal);
+    document
+      .getElementById("modalCancel")
+      .addEventListener("click", cancelTaskFromModal);
+  }
+
+  async function loadTasks() {
+    try {
+      const response = await fetch("/api/tasks");
+      const data = await response.json();
+
+      if (data.success) {
+        allTasks = data.tasks || [];
+        applyFilter();
+        updateStatistics();
+      }
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+      showError("Failed to load tasks");
+    }
+  }
+
+  function applyFilter() {
+    const statusFilter = document.getElementById("statusFilter").value;
+
+    if (statusFilter) {
+      filteredTasks = allTasks.filter(
+        (task) => task.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    } else {
+      filteredTasks = [...allTasks];
+    }
+
+    currentPage = 1;
+    renderTasks();
+    updatePagination();
+  }
+
+  function renderTasks() {
+    const tbody = document.getElementById("tasksTableBody");
+    const start = (currentPage - 1) * tasksPerPage;
+    const end = start + tasksPerPage;
+    const pageTasks = filteredTasks.slice(start, end);
+
+    if (pageTasks.length === 0) {
+      tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-inbox text-2xl mb-2"></i>
+                    <div>No tasks found</div>
+                </td>
+            </tr>
+        `;
+      return;
+    }
+
+    tbody.innerHTML = pageTasks
+      .map(
+        (task) => `
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <input type="checkbox" value="${
+                  task.id
+                }" class="task-checkbox rounded" ${
+          selectedTasks.has(task.id) ? "checked" : ""
+        }>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                <button onclick="showTaskDetails('${
+                  task.id
+                }')" class="text-blue-600 hover:text-blue-800 underline">
+                    ${task.id.substring(0, 8)}...
+                </button>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs">
+                    ${task.type}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                ${task.target || "N/A"}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
+                  task.status
+                )}">
+                    ${task.status}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-1">
+                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: ${
+                      task.progress || 0
+                    }%"></div>
+                </div>
+                <span class="text-xs">${task.progress || 0}%</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                ${formatDateTime(task.started_at)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                ${calculateDuration(task.started_at, task.completed_at)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                ${getTaskActions(task)}
+            </td>
+        </tr>
+    `
+      )
+      .join("");
+
+    // Re-attach event listeners for checkboxes
+    document.querySelectorAll(".task-checkbox").forEach((checkbox) => {
+      checkbox.addEventListener("change", updateSelectedTasks);
+    });
+  }
+
+  function getTaskActions(task) {
+    const actions = [];
+
+    if (task.status === "running" || task.status === "pending") {
+      actions.push(
+        `<button onclick="cancelTask('${task.id}')" class="text-red-600 hover:text-red-900">Cancel</button>`
+      );
+    }
+
+    if (task.status === "completed" && task.result_file) {
+      actions.push(
+        `<a href="/api/tasks/${task.id}/download" class="text-green-600 hover:text-green-900">Download</a>`
+      );
+    }
+
+    if (task.status === "failed") {
+      actions.push(
+        `<button onclick="retryTask('${task.id}')" class="text-blue-600 hover:text-blue-900">Retry</button>`
+      );
+    }
+
+    actions.push(
+      `<button onclick="deleteTask('${task.id}')" class="text-gray-600 hover:text-gray-900">Delete</button>`
+    );
+
+    return actions.join(" | ");
+  }
+
+  function updateStatistics() {
+    const stats = {
+      total: allTasks.length,
+      pending: allTasks.filter((t) => t.status === "pending").length,
+      running: allTasks.filter((t) => t.status === "running").length,
+      completed: allTasks.filter((t) => t.status === "completed").length,
+      failed: allTasks.filter((t) => t.status === "failed").length,
+    };
+
+    document.getElementById("totalTasks").textContent = stats.total;
+    document.getElementById("pendingTasks").textContent = stats.pending;
+    document.getElementById("runningTasks").textContent = stats.running;
+    document.getElementById("completedTasks").textContent = stats.completed;
+    document.getElementById("failedTasks").textContent = stats.failed;
+  }
+
+  function updateSelectedTasks() {
+    selectedTasks.clear();
+    document.querySelectorAll(".task-checkbox:checked").forEach((checkbox) => {
+      selectedTasks.add(checkbox.value);
+    });
+
+    // Update select all checkbox
+    const selectAllCheckbox = document.getElementById("selectAll");
+    const allCheckboxes = document.querySelectorAll(".task-checkbox");
+    const checkedCheckboxes = document.querySelectorAll(
+      ".task-checkbox:checked"
+    );
+
+    selectAllCheckbox.indeterminate =
+      checkedCheckboxes.length > 0 &&
+      checkedCheckboxes.length < allCheckboxes.length;
+    selectAllCheckbox.checked =
+      checkedCheckboxes.length === allCheckboxes.length &&
+      allCheckboxes.length > 0;
+  }
+
+  function toggleSelectAll() {
+    const selectAll = document.getElementById("selectAll").checked;
+    document.querySelectorAll(".task-checkbox").forEach((checkbox) => {
+      checkbox.checked = selectAll;
+    });
+    updateSelectedTasks();
+  }
+
+  async function cancelTask(taskId) {
+    if (!confirm("Are you sure you want to cancel this task?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/cancel`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        showSuccess("Task cancelled successfully");
+        loadTasks();
+      } else {
+        showError("Failed to cancel task");
+      }
+    } catch (error) {
+      console.error("Error canceling task:", error);
+      showError("Error canceling task");
+    }
+  }
+
+  async function deleteTask(taskId) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this task? This action cannot be undone."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        showSuccess("Task deleted successfully");
+        loadTasks();
+      } else {
+        showError("Failed to delete task");
+      }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      showError("Error deleting task");
+    }
+  }
+
+  async function retryTask(taskId) {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/retry`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        showSuccess("Task queued for retry");
+        loadTasks();
+      } else {
+        showError("Failed to retry task");
+      }
+    } catch (error) {
+      console.error("Error retrying task:", error);
+      showError("Error retrying task");
+    }
+  }
+
+  async function clearCompletedTasks() {
+    const completedTasks = allTasks.filter((t) => t.status === "completed");
+    if (completedTasks.length === 0) {
+      showInfo("No completed tasks to clear");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Are you sure you want to clear ${completedTasks.length} completed tasks?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/tasks/clear-completed", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        showSuccess("Completed tasks cleared successfully");
+        loadTasks();
+      } else {
+        showError("Failed to clear completed tasks");
+      }
+    } catch (error) {
+      console.error("Error clearing completed tasks:", error);
+      showError("Error clearing completed tasks");
+    }
+  }
+
+  async function cancelAllTasks() {
+    const activeTasks = allTasks.filter(
+      (t) => t.status === "running" || t.status === "pending"
+    );
+    if (activeTasks.length === 0) {
+      showInfo("No active tasks to cancel");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Are you sure you want to cancel ${activeTasks.length} active tasks?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/tasks/cancel-all", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        showSuccess("All active tasks cancelled successfully");
+        loadTasks();
+      } else {
+        showError("Failed to cancel all tasks");
+      }
+    } catch (error) {
+      console.error("Error canceling all tasks:", error);
+      showError("Error canceling all tasks");
+    }
+  }
+
+  async function showTaskDetails(taskId) {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        const task = data.task;
+        const modal = document.getElementById("taskModal");
+        const details = document.getElementById("taskDetails");
+
+        details.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Task ID</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white font-mono">${
+                          task.id
+                        }</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">${
+                          task.type
+                        }</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                        <span class="mt-1 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
+                          task.status
+                        )}">
+                            ${task.status}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Progress</label>
+                        <div class="mt-1">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${
+                                  task.progress || 0
+                                }%"></div>
+                            </div>
+                            <span class="text-xs text-gray-500">${
+                              task.progress || 0
+                            }%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Started At</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">${formatDateTime(
+                          task.started_at
+                        )}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duration</label>
+                        <p class="mt-1 text-sm text-gray-900 dark:text-white">${calculateDuration(
+                          task.started_at,
+                          task.completed_at
+                        )}</p>
+                    </div>
+                </div>
+                
+                ${
+                  task.target
+                    ? `
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Target</label>
+                    <p class="mt-1 text-sm text-gray-900 dark:text-white">${task.target}</p>
+                </div>
+                `
+                    : ""
+                }
+                
+                ${
+                  task.error_message
+                    ? `
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-red-700 dark:text-red-300">Error Message</label>
+                    <p class="mt-1 text-sm text-red-900 dark:text-red-200 bg-red-50 dark:bg-red-900 p-2 rounded">${task.error_message}</p>
+                </div>
+                `
+                    : ""
+                }
+                
+                ${
+                  task.result
+                    ? `
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Result Summary</label>
+                    <pre class="mt-1 text-xs text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 p-2 rounded overflow-auto max-h-40">${JSON.stringify(
+                      task.result,
+                      null,
+                      2
+                    )}</pre>
+                </div>
+                `
+                    : ""
+                }
+            `;
+
+        // Store current task ID for modal actions
+        modal.dataset.taskId = taskId;
+        modal.classList.remove("hidden");
+
+        // Update modal buttons based on task status
+        const cancelBtn = document.getElementById("modalCancel");
+        if (task.status === "running" || task.status === "pending") {
+          cancelBtn.style.display = "block";
+        } else {
+          cancelBtn.style.display = "none";
+        }
+      }
+    } catch (error) {
+      console.error("Error loading task details:", error);
+      showError("Failed to load task details");
+    }
+  }
+
+  function closeTaskModal() {
+    document.getElementById("taskModal").classList.add("hidden");
+  }
+
+  function cancelTaskFromModal() {
+    const taskId = document.getElementById("taskModal").dataset.taskId;
+    if (taskId) {
+      cancelTask(taskId);
+      closeTaskModal();
+    }
+  }
+
+  // Utility functions
+  function getStatusBadgeClass(status) {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "running":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      case "cancelled":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  }
+
+  function formatDateTime(timestamp) {
+    if (!timestamp) return "N/A";
+    return new Date(timestamp).toLocaleString();
+  }
+
+  function calculateDuration(startTime, endTime) {
+    if (!startTime) return "N/A";
+
+    const start = new Date(startTime);
+    const end = endTime ? new Date(endTime) : new Date();
+    const duration = end - start;
+
+    if (duration < 1000) return "< 1s";
+    if (duration < 60000) return `${Math.floor(duration / 1000)}s`;
+    if (duration < 3600000)
+      return `${Math.floor(duration / 60000)}m ${Math.floor(
+        (duration % 60000) / 1000
+      )}s`;
+
+    const hours = Math.floor(duration / 3600000);
+    const minutes = Math.floor((duration % 3600000) / 60000);
+    return `${hours}h ${minutes}m`;
+  }
+
+  function showSuccess(message) {
+    showNotification(message, "success");
+  }
+
+  function showError(message) {
+    showNotification(message, "error");
+  }
+
+  function showInfo(message) {
+    showNotification(message, "info");
+  }
+
+  function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+      type === "success"
+        ? "bg-green-500 text-white"
+        : type === "error"
+        ? "bg-red-500 text-white"
+        : "bg-blue-500 text-white"
+    }`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 3000);
+  }
+
+  function updatePagination() {
+    const totalTasks = filteredTasks.length;
+    const totalPages = Math.ceil(totalTasks / tasksPerPage);
+
+    if (totalPages <= 1) {
+      document.getElementById("pagination").classList.add("hidden");
+      return;
+    }
+
+    document.getElementById("pagination").classList.remove("hidden");
+
+    const start = (currentPage - 1) * tasksPerPage + 1;
+    const end = Math.min(currentPage * tasksPerPage, totalTasks);
+
+    document.getElementById("showingStart").textContent = start;
+    document.getElementById("showingEnd").textContent = end;
+    document.getElementById("totalCount").textContent = totalTasks;
+
+    // Update navigation buttons
+    document.getElementById("prevPage").disabled = currentPage === 1;
+    document.getElementById("nextPage").disabled = currentPage === totalPages;
+
+    // Generate page numbers
+    const pageNumbers = document.getElementById("pageNumbers");
+    pageNumbers.innerHTML = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - 2 && i <= currentPage + 2)
+      ) {
+        const button = document.createElement("button");
+        button.textContent = i;
+        button.className = `px-3 py-2 border rounded-md ${
+          i === currentPage
+            ? "bg-blue-600 text-white border-blue-600"
+            : "bg-white text-gray-500 border-gray-300 hover:bg-gray-50"
+        }`;
+        button.addEventListener("click", () => {
+          currentPage = i;
+          renderTasks();
+          updatePagination();
+        });
+        pageNumbers.appendChild(button);
+      } else if (i === currentPage - 3 || i === currentPage + 3) {
+        const ellipsis = document.createElement("span");
+        ellipsis.textContent = "...";
+        ellipsis.className = "px-3 py-2 text-gray-500";
+        pageNumbers.appendChild(ellipsis);
+      }
+    }
+  }
+</script>
+
+<!-- Font Awesome for icons -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+/>
+{% endblock %}

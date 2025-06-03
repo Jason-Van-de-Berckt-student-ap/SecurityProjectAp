@@ -1,0 +1,833 @@
+openapi: 3.0.3
+info:
+  title: EASM - External Attack Surface Management API
+  description: |
+    Comprehensive API for external attack surface management including domain scanning,
+    vulnerability assessment, and security monitoring capabilities.
+
+    ## Features
+    - Domain and subdomain enumeration
+    - SSL/TLS certificate analysis  
+    - DNS record analysis
+    - Vulnerability scanning
+    - Batch processing capabilities
+    - Real-time monitoring and health checks
+    - Caching and optimization
+
+    ## Rate Limiting
+    - Default: 100 requests per hour per IP
+    - Authenticated users: 1000 requests per hour
+    - Bulk operations: 10 requests per hour
+
+    ## Authentication
+    Currently supports API key authentication. JWT tokens will be supported in future versions.
+
+  version: 2.0.0
+  contact:
+    name: EASM Development Team
+    email: security@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+  - url: https://api.easm.example.com
+    description: Production server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  # Health Check Endpoints
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Basic health check
+      description: Returns basic application health status
+      responses:
+        "200":
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Application is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /health/detailed:
+    get:
+      tags:
+        - Health
+      summary: Detailed health check
+      description: Returns comprehensive health status of all components
+      responses:
+        "200":
+          description: Detailed health information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DetailedHealthStatus"
+
+  /health/database:
+    get:
+      tags:
+        - Health
+      summary: Database health check
+      description: Returns database connectivity and performance metrics
+      responses:
+        "200":
+          description: Database is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DatabaseHealth"
+
+  /health/cache:
+    get:
+      tags:
+        - Health
+      summary: Cache health check
+      description: Returns Redis cache status and performance metrics
+      responses:
+        "200":
+          description: Cache is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CacheHealth"
+
+  # Scanning Endpoints
+  /:
+    get:
+      tags:
+        - UI
+      summary: Main application interface
+      description: Returns the main web interface for the EASM application
+      responses:
+        "200":
+          description: HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /scan:
+    post:
+      tags:
+        - Scanning
+      summary: Scan a single domain
+      description: Performs comprehensive security scan on a single domain
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                domain:
+                  type: string
+                  pattern: '^[a-zA-Z0-9][a-zA-Z0-9\-\.]*[a-zA-Z0-9]$'
+                  example: "example.com"
+                  description: Domain name to scan
+                scan_types:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      [dns, ssl, vulnerabilities, subdomains, related_domains]
+                  example: ["dns", "ssl", "vulnerabilities"]
+                  description: Types of scans to perform
+              required:
+                - domain
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanRequest"
+      responses:
+        "200":
+          description: Scan completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResult"
+        "400":
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /batch_scan:
+    post:
+      tags:
+        - Scanning
+      summary: Scan multiple domains
+      description: Performs batch scanning of multiple domains with progress tracking
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file containing list of domains
+                scan_types:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      [dns, ssl, vulnerabilities, subdomains, related_domains]
+                  description: Types of scans to perform
+              required:
+                - file
+          application/json:
+            schema:
+              type: object
+              properties:
+                domains:
+                  type: array
+                  items:
+                    type: string
+                  example: ["example.com", "test.com", "demo.org"]
+                scan_types:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      [dns, ssl, vulnerabilities, subdomains, related_domains]
+              required:
+                - domains
+      responses:
+        "202":
+          description: Batch scan initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchScanResponse"
+
+  /batch_status/{batch_id}:
+    get:
+      tags:
+        - Scanning
+      summary: Get batch scan status
+      description: Returns the current status and progress of a batch scan
+      parameters:
+        - name: batch_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the batch scan
+      responses:
+        "200":
+          description: Batch status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchStatus"
+        "404":
+          description: Batch not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /history:
+    get:
+      tags:
+        - History
+      summary: Get scan history
+      description: Returns paginated list of previous scans
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of results per page
+        - name: domain
+          in: query
+          schema:
+            type: string
+          description: Filter by domain name
+        - name: scan_type
+          in: query
+          schema:
+            type: string
+            enum: [dns, ssl, vulnerabilities, subdomains, related_domains]
+          description: Filter by scan type
+      responses:
+        "200":
+          description: Scan history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanHistory"
+
+  /export/{scan_id}:
+    get:
+      tags:
+        - Export
+      summary: Export scan results
+      description: Export scan results in various formats
+      parameters:
+        - name: scan_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Scan ID to export
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv, xml, pdf]
+            default: json
+          description: Export format
+      responses:
+        "200":
+          description: Export file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResult"
+            text/csv:
+              schema:
+                type: string
+            application/xml:
+              schema:
+                type: string
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  # Monitoring Endpoints
+  /dashboard:
+    get:
+      tags:
+        - Monitoring
+      summary: Monitoring dashboard
+      description: Returns the monitoring dashboard interface
+      responses:
+        "200":
+          description: Dashboard HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/dashboard/metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Get dashboard metrics
+      description: Returns real-time metrics for the monitoring dashboard
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardMetrics"
+
+  /task_management:
+    get:
+      tags:
+        - Tasks
+      summary: Task management interface
+      description: Returns the task management interface
+      responses:
+        "200":
+          description: Task management HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/tasks:
+    get:
+      tags:
+        - Tasks
+      summary: Get background tasks
+      description: Returns list of background tasks with filtering and pagination
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, cancelled]
+          description: Filter by task status
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: Task list retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskList"
+
+  /api/tasks/{task_id}:
+    get:
+      tags:
+        - Tasks
+      summary: Get task details
+      description: Returns detailed information about a specific task
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDetails"
+        "404":
+          description: Task not found
+
+    delete:
+      tags:
+        - Tasks
+      summary: Cancel task
+      description: Cancels a running or pending task
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task cancelled successfully
+        "404":
+          description: Task not found
+        "409":
+          description: Task cannot be cancelled
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: string
+        uptime_seconds:
+          type: integer
+        version:
+          type: string
+
+    DetailedHealthStatus:
+      type: object
+      properties:
+        overall_status:
+          type: string
+          enum: [healthy, degraded, critical, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        response_time_ms:
+          type: number
+        components:
+          type: object
+          properties:
+            application:
+              $ref: "#/components/schemas/HealthStatus"
+            database:
+              $ref: "#/components/schemas/DatabaseHealth"
+            cache:
+              $ref: "#/components/schemas/CacheHealth"
+            tasks:
+              $ref: "#/components/schemas/TaskSystemHealth"
+            system:
+              $ref: "#/components/schemas/SystemHealth"
+
+    DatabaseHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        response_time_ms:
+          type: number
+        pool_size:
+          type: integer
+        available_connections:
+          type: integer
+        used_connections:
+          type: integer
+        max_connections:
+          type: integer
+
+    CacheHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        response_time_ms:
+          type: number
+        hit_rate:
+          type: number
+        total_keys:
+          type: integer
+        memory_usage_mb:
+          type: number
+        connected_clients:
+          type: integer
+
+    TaskSystemHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        pending_tasks:
+          type: integer
+        active_workers:
+          type: integer
+        max_workers:
+          type: integer
+        completed_tasks:
+          type: integer
+        failed_tasks:
+          type: integer
+        worker_utilization:
+          type: number
+
+    SystemHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, critical, unhealthy]
+        cpu_percent:
+          type: number
+        memory_percent:
+          type: number
+        memory_available_gb:
+          type: number
+        disk_percent:
+          type: number
+        disk_free_gb:
+          type: number
+
+    ScanRequest:
+      type: object
+      properties:
+        domain:
+          type: string
+          pattern: '^[a-zA-Z0-9][a-zA-Z0-9\-\.]*[a-zA-Z0-9]$'
+          example: "example.com"
+        scan_types:
+          type: array
+          items:
+            type: string
+            enum: [dns, ssl, vulnerabilities, subdomains, related_domains]
+          example: ["dns", "ssl", "vulnerabilities"]
+      required:
+        - domain
+
+    ScanResult:
+      type: object
+      properties:
+        scan_id:
+          type: integer
+        domain:
+          type: string
+        scan_date:
+          type: string
+          format: date-time
+        scan_types:
+          type: array
+          items:
+            type: string
+        results:
+          type: object
+          properties:
+            dns_records:
+              type: object
+            ssl_info:
+              type: object
+            vulnerabilities:
+              type: array
+              items:
+                type: object
+            subdomains:
+              type: array
+              items:
+                type: string
+            related_domains:
+              type: array
+              items:
+                type: string
+        metadata:
+          type: object
+          properties:
+            scan_duration_seconds:
+              type: number
+            cached:
+              type: boolean
+            cache_hit_rate:
+              type: number
+
+    BatchScanResponse:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        total_domains:
+          type: integer
+        estimated_completion_time:
+          type: string
+          format: date-time
+        progress_url:
+          type: string
+
+    BatchStatus:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        total_domains:
+          type: integer
+        completed_domains:
+          type: integer
+        failed_domains:
+          type: integer
+        progress_percentage:
+          type: number
+        started_at:
+          type: string
+          format: date-time
+        estimated_completion:
+          type: string
+          format: date-time
+        results_available:
+          type: boolean
+
+    ScanHistory:
+      type: object
+      properties:
+        total_count:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+        scans:
+          type: array
+          items:
+            type: object
+            properties:
+              scan_id:
+                type: integer
+              domain:
+                type: string
+              scan_date:
+                type: string
+                format: date-time
+              scan_types:
+                type: array
+                items:
+                  type: string
+              status:
+                type: string
+              duration_seconds:
+                type: number
+
+    DashboardMetrics:
+      type: object
+      properties:
+        system_metrics:
+          type: object
+          properties:
+            cpu_usage:
+              type: number
+            memory_usage:
+              type: number
+            disk_usage:
+              type: number
+            network_io:
+              type: object
+        scan_metrics:
+          type: object
+          properties:
+            total_scans:
+              type: integer
+            scans_today:
+              type: integer
+            active_scans:
+              type: integer
+            average_scan_time:
+              type: number
+        cache_metrics:
+          type: object
+          properties:
+            hit_rate:
+              type: number
+            total_keys:
+              type: integer
+            memory_usage:
+              type: number
+        task_metrics:
+          type: object
+          properties:
+            pending_tasks:
+              type: integer
+            active_tasks:
+              type: integer
+            completed_tasks:
+              type: integer
+            failed_tasks:
+              type: integer
+
+    TaskList:
+      type: object
+      properties:
+        total_count:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskSummary"
+
+    TaskSummary:
+      type: object
+      properties:
+        task_id:
+          type: string
+        task_type:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        priority:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    TaskDetails:
+      allOf:
+        - $ref: "#/components/schemas/TaskSummary"
+        - type: object
+          properties:
+            result:
+              type: object
+            error_message:
+              type: string
+            metadata:
+              type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: Scanning
+    description: Domain scanning and analysis operations
+  - name: History
+    description: Scan history and results management
+  - name: Export
+    description: Data export functionality
+  - name: Monitoring
+    description: System monitoring and dashboards
+  - name: Tasks
+    description: Background task management
+  - name: UI
+    description: Web user interface endpoints

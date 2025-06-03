@@ -43,8 +43,35 @@
   </head>
   <body
     class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 min-h-screen transition-all duration-300 text-gray-800 dark:text-gray-200"
-    {% block body_attributes %}{% endblock %} {# For Alpine.js x-data #}
-  >
+    {% block body_attributes %}{% endblock %} {# For Alpine.js x-data #}  >
+    <!-- Authentication Navigation -->
+    <nav class="fixed top-4 left-4 z-50">
+      <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg shadow-lg p-2">
+        {% if g.current_user %}
+          <div class="flex items-center space-x-4">
+            <span class="text-sm font-medium">{{ g.current_user.username }}</span>
+            {% if g.current_user.has_permission('admin') %}
+              <a href="/monitoring/dashboard" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">
+                Dashboard
+              </a>
+            {% endif %}
+            <a href="/auth/logout" class="text-red-600 dark:text-red-400 hover:underline text-sm">
+              Logout
+            </a>
+          </div>
+        {% else %}
+          <div class="flex items-center space-x-4">
+            <a href="/auth/login" class="text-blue-600 dark:text-blue-400 hover:underline text-sm">
+              Login
+            </a>
+            <a href="/auth/register" class="text-green-600 dark:text-green-400 hover:underline text-sm">
+              Register
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </nav>
+
     <!-- Dark Mode Toggle (Common to all pages) -->
     <div class="fixed top-4 right-4 z-50">
       <button
