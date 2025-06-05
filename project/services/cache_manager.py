@@ -41,7 +41,7 @@ class CacheManager:
                         'port': config.get('port', 6379),
                         'password': config.get('password', ''),
                         'db': config.get('db', 0),
-                        'decode_responses': False # Keep as bytes for pickle
+                        'decode_responses': False  # Keep as bytes for pickle
                     }
 
                     self.redis_client = redis.Redis(**redis_config)
@@ -90,7 +90,7 @@ class CacheManager:
 
                     # Check if cache is expired (using stored timestamp if available, else current time)
                     expiry_time = self.cache_timestamps.get(cache_key, float('inf'))
-                    if time.time() < expiry_time: # Check against explicit expiry time
+                    if time.time() < expiry_time:  # Check against explicit expiry time
                         logger.info(f"Cache hit for {domain} ({scan_type}) from memory")
                         return result.get('data')
                     else:
@@ -128,10 +128,7 @@ class CacheManager:
                 self.memory_cache[cache_key] = cache_data
                 self.cache_timestamps[cache_key] = time.time() + ttl
 
-                # Clean up expired entries periodically (or on demand)
-                # For simplicity, calling it after every set is not efficient,
-                # but ensures cleanup. A better approach might be a background thread
-                # or triggered less frequently.
+                # Clean up expired entries periodically
                 self._cleanup_expired_memory_cache()
 
             logger.debug(f"Cached scan result for {domain} ({scan_type})")
@@ -147,7 +144,7 @@ class CacheManager:
         current_time = time.time()
         expired_keys = []
 
-        for key, expiry_time in list(self.cache_timestamps.items()): # Iterate on a copy
+        for key, expiry_time in list(self.cache_timestamps.items()):
             if current_time > expiry_time:
                 expired_keys.append(key)
 
@@ -170,10 +167,6 @@ class CacheManager:
 
             if self.use_redis:
                 # Redis implementation
-                # Note: Directly checking content of all keys can be slow for large caches.
-                # A better approach might involve storing domain as part of key, e.g.,
-                # "scan_cache:{domain}:{hash}" to use Redis SCAN command with pattern.
-                # For now, stick to the provided approach.
                 pattern = "scan_cache:*"
                 keys = self.redis_client.keys(pattern)
 
@@ -191,7 +184,7 @@ class CacheManager:
             else:
                 # In-memory cache implementation
                 keys_to_delete = []
-                for key, cache_data in list(self.memory_cache.items()): # Iterate on a copy
+                for key, cache_data in list(self.memory_cache.items()):
                     if cache_data.get('domain') == domain:
                         keys_to_delete.append(key)
 
@@ -199,6 +192,203 @@ class CacheManager:
                     if key in self.memory_cache:
                         del self.memory_cache[key]
                     if key in self.cache_timestamps:
+                        del self.cache_timestamps[key]
+                    deleted_count += 1
+
+            logger.info(f"Invalidated {deleted_count} cache entries for domain '{domain}'")
+
+        except Exception as e:
+            logger.error(f"Cache invalidation error for domain {domain}: {e}")
+
+    def get_cache_statistics(self) -> Dict[str, Any]:
+        """Get cache statistics"""
+        try:
+            if self.use_redis:
+                # Redis statistics
+                info = self.redis_client.info()
+                return {
+                    'cache_type': 'redis',
+                    'total_keys': self.redis_client.dbsize(),
+                    'memory_usage': info.get('used_memory', 0),
+                    'hit_rate': info.get('keyspace_hits', 0) / max(info.get('keyspace_hits', 0) + info.get('keyspace_misses', 0), 1),
+                    'connected_clients': info.get('connected_clients', 0)
+                }
+            else:
+                # In-memory cache statistics
+                current_time = time.time()
+                valid_entries = sum(1 for exp_time in self.cache_timestamps.values() if exp_time > current_time)
+                
+                return {
+                    'cache_type': 'memory',
+                    'total_keys': len(self.memory_cache),
+                    'valid_keys': valid_entries,
+                    'expired_keys': len(self.memory_cache) - valid_entries,
+                    'memory_usage_estimate': len(str(self.memory_cache))  # Rough estimate
+                }
+
+        except Exception as e:
+            logger.error(f"Cache statistics error: {e}")
+            return {'cache_type': 'unknown', 'error': str(e)}
+
+    def clear_cache(self, pattern: str = "*"):
+        """Clear cache entries matching pattern"""
+        try:
+            if self.use_redis:
+                pattern = "scan_cache:*"
+                keys = self.redis_client.keys(pattern)
+                if keys:
+                    deleted = self.redis_client.delete(*keys)
+                    logger.info(f"Cleared {deleted} Redis cache entries matching '{pattern}'")
+            else:
+                # Clear in-memory cache
+                cache_count = len(self.memory_cache)
+                self.memory_cache.clear()
+                self.cache_timestamps.clear()
+                logger.info(f"Cleared {cache_count} memory cache entries")
+
+        except Exception as e:
+            logger.error(f"Cache clear error: {e}")
+
+    # Generic cache methods used by other services
+    def get(self, key: str) -> Optional[Any]:
+        """Get value by key"""
+        if not self.enabled:
+            return None
+
+        try:
+            if self.use_redis:
+                data = self.redis_client.get(key)
+                return pickle.loads(data) if data else None
+            else:
+                # For in-memory, also check TTL before returning
+                if key in self.memory_cache and time.time() < self.cache_timestamps.get(key, float('inf')):
+                    return self.memory_cache.get(key)
+                else:
+                    # Clean up expired in-memory entry on access if found
+                    if key in self.memory_cache:
+                        del self.memory_cache[key]
+                        if key in self.cache_timestamps:
+                            del self.cache_timestamps[key]
+                    return None
+        except Exception as e:
+            logger.error(f"Cache get error for key {key}: {e}")
+            return None
+
+    def set(self, key: str, value: Any, timeout: int = 3600, ttl: int = None):
+        """Set value with timeout (ttl is alias for timeout for compatibility)"""
+        if not self.enabled:
+            return
+
+        # Use ttl if provided, otherwise use timeout
+        expiry_time = ttl if ttl is not None else timeout
+
+        try:
+            if self.use_redis:
+                self.redis_client.setex(key, expiry_time, pickle.dumps(value))
+            else:
+                self.memory_cache[key] = value
+                self.cache_timestamps[key] = time.time() + expiry_time
+        except Exception as e:
+            logger.error(f"Cache set error for key {key}: {e}")
+
+    def delete(self, key: str):
+        """Delete key"""
+        if not self.enabled:
+            return
+
+        try:
+            if self.use_redis:
+                self.redis_client.delete(key)
+            else:
+                if key in self.memory_cache:
+                    del self.memory_cache[key]
+                if key in self.cache_timestamps:
+                    del self.cache_timestamps[key]
+        except Exception as e:
+            logger.error(f"Cache delete error for key {key}: {e}")
+
+    def exists(self, key: str) -> bool:
+        """Check if key exists"""
+        if not self.enabled:
+            return False
+
+        try:
+            if self.use_redis:
+                return self.redis_client.exists(key)
+            else:
+                # Check both existence and TTL for in-memory
+                if key in self.memory_cache:
+                    expiry_time = self.cache_timestamps.get(key, float('inf'))
+                    if time.time() < expiry_time:
+                        return True
+                    else:
+                        # Clean up expired entry
+                        del self.memory_cache[key]
+                        if key in self.cache_timestamps:
+                            del self.cache_timestamps[key]
+                        return False
+                return False
+        except Exception as e:
+            logger.error(f"Cache exists error for key {key}: {e}")
+            return False
+
+    def close(self):
+        """Close cache connections"""
+        try:
+            if self.use_redis and self.redis_client:
+                self.redis_client.close()
+            else:
+                self.memory_cache.clear()
+                self.cache_timestamps.clear()
+        except Exception as e:
+            logger.error(f"Cache close error: {e}")
+
+
+def cache_scan_result(ttl: int = 3600, cache_key_prefix: str = "scan"):
+    """Decorator to cache scan results"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Create cache key from function name and arguments
+            cache_key = f"{cache_key_prefix}:{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
+            
+            # Try to get cached result
+            cache_manager = get_cache_manager()
+            if cache_manager:
+                cached_result = cache_manager.get(cache_key)
+                if cached_result is not None:
+                    logger.debug(f"Cache hit for {func.__name__}")
+                    return cached_result
+
+            # Execute function and cache result
+            try:
+                result = func(*args, **kwargs)
+                if cache_manager and result is not None:
+                    cache_manager.set(cache_key, result, timeout=ttl)
+                    logger.debug(f"Cached result for {func.__name__}")
+                return result
+            except Exception as e:
+                logger.error(f"Error in cached function {func.__name__}: {e}")
+                raise e
+
+        return wrapper
+    return decorator
+
+
+# Global cache manager instance
+_cache_manager = None
+
+def get_cache_manager() -> Optional[CacheManager]:
+    """Get the global cache manager instance"""
+    global _cache_manager
+    return _cache_manager
+
+def init_cache_manager(config: Dict[str, Any]) -> CacheManager:
+    """Initialize the global cache manager"""
+    global _cache_manager
+    _cache_manager = CacheManager(config)
+    logger.info("Cache manager initialized")
+    return _cache_manager
                         del self.cache_timestamps[key]
                     deleted_count += 1
 
@@ -288,19 +478,22 @@ class CacheManager:
                     return None
         except Exception as e:
             logger.error(f"Cache get error for key {key}: {e}")
-            return None
-
-    def set(self, key: str, value: Any, timeout: int = 3600):
-        """Set value with timeout"""
+                        return None
+            
+    def set(self, key: str, value: Any, timeout: int = 3600, ttl: int = None):
+        """Set value with timeout (ttl is alias for timeout for compatibility)"""
         if not self.enabled:
             return
 
+        # Use ttl if provided, otherwise use timeout
+        expiry_time = ttl if ttl is not None else timeout
+
         try:
             if self.use_redis:
-                self.redis_client.setex(key, timeout, pickle.dumps(value))
+                self.redis_client.setex(key, expiry_time, pickle.dumps(value))
             else:
                 self.memory_cache[key] = value
-                self.cache_timestamps[key] = time.time() + timeout
+                self.cache_timestamps[key] = time.time() + expiry_time
         except Exception as e:
             logger.error(f"Cache set error for key {key}: {e}")
 

@@ -10,7 +10,7 @@ import time
 import os
 import threading
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Tuple # Added Tuple for type hints
 from enum import Enum
 from dataclasses import dataclass, asdict
 from functools import wraps
@@ -67,7 +67,19 @@ class LogEvent:
 class LoggingService:
     """Comprehensive logging and audit service."""
 
-    def __init__(self, db_manager, cache_manager, config: Dict[str, Any]):
+    def __init__(self, db_manager: Any, cache_manager: Any, config: Dict[str, Any]):
+        """
+        Initializes the LoggingService.
+
+        Args:
+            db_manager: An object managing database connections and queries.
+                        Expected methods for SELECT: `execute_query(sql: str, params: Optional[Tuple] = None) -> List[Dict]`
+                        Expected methods for DML: `execute_query(sql: str, params: Optional[Tuple] = None) -> int` (row count)
+                        The `execute_query` method *must* consistently return `List[Dict]` or `[]` for SELECT.
+            cache_manager: An object managing cache operations.
+                           Expected methods: `get(key: str) -> Any`, `set(key: str, value: Any, ttl: int) -> None`.
+            config: A dictionary containing logging configuration (e.g., LOG_LEVEL, LOG_TO_FILE).
+        """
         self.db_manager = db_manager
         self.cache_manager = cache_manager
         self.config = config
@@ -78,7 +90,7 @@ class LoggingService:
         self.log_to_db = config.get('LOG_TO_DB', True)
         self.log_to_console = config.get('LOG_TO_CONSOLE', True)
         self.log_retention_days = config.get('LOG_RETENTION_DAYS', 30)
-        self.performance_threshold = config.get('PERFORMANCE_THRESHOLD', 5.0)
+        self.performance_threshold = config.get('PERFORMANCE_THRESHOLD', 5.0) # seconds
 
         # Log file paths
         self.log_dir = config.get('LOG_DIRECTORY', 'logs')
@@ -105,22 +117,22 @@ class LoggingService:
 
         # Security logger
         self.security_logger = logging.getLogger('easm.security')
-        self.security_logger.setLevel(logging.INFO)
+        self.security_logger.setLevel(logging.INFO) # Security events are always important
         self.security_logger.propagate = False
 
         # Performance logger
         self.performance_logger = logging.getLogger('easm.performance')
-        self.performance_logger.setLevel(logging.INFO)
+        self.performance_logger.setLevel(logging.INFO) # Performance events are always important
         self.performance_logger.propagate = False
 
         # Audit logger
         self.audit_logger = logging.getLogger('easm.audit')
-        self.audit_logger.setLevel(logging.INFO)
+        self.audit_logger.setLevel(logging.INFO) # Audit events are always important
         self.audit_logger.propagate = False
 
         # Error logger
         self.error_logger = logging.getLogger('easm.error')
-        self.error_logger.setLevel(logging.ERROR)
+        self.error_logger.setLevel(logging.ERROR) # Errors are always important
         self.error_logger.propagate = False
 
         # Configure handlers
@@ -128,20 +140,23 @@ class LoggingService:
 
     def _configure_handlers(self):
         """Configure log handlers for different output destinations."""
+        # Standard formatter for console and file (non-JSON)
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-        
-        # NOTE: Original code had a 'json_formatter' but it was identical to 'formatter'
-        # and not used. If JSON logging is desired, a custom formatter would be needed.
-        # For now, keeping the standard formatter.
+
+        # NOTE: If structured JSON logging to files is desired (e.g., for ELK stack ingestion),
+        # a custom formatter that serializes the log record's 'msg' (which would be the LogEvent.to_dict())
+        # to JSON would be needed, or you could use a logging library designed for structured logging.
+        # The current setup logs standard string messages to files.
 
         # Console handler
         if self.log_to_console:
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(formatter)
+            # Add to all specific loggers for comprehensive console output
             self.app_logger.addHandler(console_handler)
-            self.security_logger.addHandler(console_handler) # Add to other loggers if desired
+            self.security_logger.addHandler(console_handler)
             self.performance_logger.addHandler(console_handler)
             self.audit_logger.addHandler(console_handler)
             self.error_logger.addHandler(console_handler)
@@ -185,9 +200,12 @@ class LoggingService:
             self.error_logger.addHandler(error_handler)
 
     def _init_log_tables(self):
-        """Initialize logging database tables."""
+        """Initialize logging database tables.
+        Assumes `db_manager.execute_query` handles connection and transaction (commit).
+        SQL syntax specific to PostgreSQL (e.g., SERIAL PRIMARY KEY).
+        """
         if not self.log_to_db:
-            self.app_logger.info("Database logging is disabled in config.")
+            self.app_logger.info("Database logging is disabled in config. Skipping table initialization.")
             return
 
         try:
@@ -210,6 +228,7 @@ class LoggingService:
                     resource VARCHAR(255),
                     duration FLOAT,
                     status_code INTEGER,
+                    -- Store JSON as TEXT, consider JSONB for PostgreSQL for better querying
                     error_details TEXT,
                     metadata TEXT
                 )
@@ -256,30 +275,29 @@ class LoggingService:
         def cleanup_old_logs():
             try:
                 cutoff_date = datetime.now() - timedelta(days=self.log_retention_days)
+                self.app_logger.info(f"Starting log cleanup for records older than {cutoff_date}.")
 
                 # Clean up old log events
-                deleted_events = self.db_manager.execute_query(
+                # Assuming execute_query for DELETE returns a list of dictionaries/tuples (e.g., from RETURNING clause)
+                deleted_events_records = self.db_manager.execute_query(
                     "DELETE FROM log_events WHERE timestamp < %s RETURNING id",
                     (cutoff_date,)
                 )
-                self.app_logger.info(f"Cleaned up {len(deleted_events)} old log_events.")
-
+                self.app_logger.info(f"Cleaned up {len(deleted_events_records) if deleted_events_records else 0} old log_events.")
 
                 # Clean up old performance metrics
-                deleted_perf = self.db_manager.execute_query(
+                deleted_perf_records = self.db_manager.execute_query(
                     "DELETE FROM performance_metrics WHERE timestamp < %s RETURNING id",
                     (cutoff_date,)
                 )
-                self.app_logger.info(f"Cleaned up {len(deleted_perf)} old performance_metrics.")
-
+                self.app_logger.info(f"Cleaned up {len(deleted_perf_records) if deleted_perf_records else 0} old performance_metrics.")
 
                 # Clean up old system health records
-                deleted_health = self.db_manager.execute_query(
+                deleted_health_records = self.db_manager.execute_query(
                     "DELETE FROM system_health WHERE timestamp < %s RETURNING id",
                     (cutoff_date,)
                 )
-                self.app_logger.info(f"Cleaned up {len(deleted_health)} old system_health records.")
-
+                self.app_logger.info(f"Cleaned up {len(deleted_health_records) if deleted_health_records else 0} old system_health records.")
 
                 self.app_logger.info(f"Log cleanup completed for records older than {cutoff_date}.")
 
@@ -287,15 +305,15 @@ class LoggingService:
                 self.app_logger.error(f"Log cleanup failed: {e}", exc_info=True)
             finally:
                 # Reschedule the timer
-                timer = threading.Timer(86400, cleanup_old_logs)  # 24 hours
-                timer.daemon = True
+                timer = threading.Timer(86400, cleanup_old_logs)  # 24 hours (86400 seconds)
+                timer.daemon = True # Allow program to exit even if timer is running
                 timer.start()
 
         # Start the initial timer
         # Adding a short delay to ensure DB tables are created before first cleanup attempt
-        initial_delay = 3600 # 1 hour, or could be 60 seconds for faster testing
+        initial_delay = 3600 # 1 hour, or could be 60 seconds for faster testing during development
         timer = threading.Timer(initial_delay, cleanup_old_logs)
-        timer.daemon = True # Allow program to exit even if timer is running
+        timer.daemon = True
         timer.start()
         self.app_logger.info(f"Log cleanup task scheduled to run every 24 hours, starting in {initial_delay} seconds.")
 
@@ -321,7 +339,9 @@ class LoggingService:
             # Log to appropriate Python logger
             logger = self._get_logger_by_type(event_type)
             log_method = getattr(logger, level.value.lower())
-            log_method(f"[{event_type.value}] {message}")
+            # For Python's standard logger, we log the message and any relevant context
+            # The structured event itself is stored in the DB/cache.
+            log_method(f"[{event.event_type}] {event.message}")
 
             # Store in database
             if self.log_to_db:
@@ -336,7 +356,7 @@ class LoggingService:
             self.app_logger.critical(f"CRITICAL: Logging system experienced an error: {e}", exc_info=True)
 
     def _get_request_context(self) -> Dict[str, Any]:
-        """Get current request context for logging."""
+        """Get current request context for logging from Flask's `request`, `g`, and `session`."""
         context = {}
         # Use a try-except block to gracefully handle situations where Flask context
         # (request, g, session) is not available (e.g., background tasks, scripts).
@@ -345,11 +365,12 @@ class LoggingService:
             if request:
                 context['ip_address'] = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
                 context['user_agent'] = request.headers.get('User-Agent', '')
-                context['request_id'] = getattr(g, 'request_id', None) # Assumes request_id is set on Flask's g object
+                # Assumes request_id is set on Flask's g object by a middleware
+                context['request_id'] = getattr(g, 'request_id', None)
 
             if hasattr(g, 'current_user') and g.current_user:
-                # Assumes g.current_user is an object with user_id and username attributes
-                context['user_id'] = getattr(g.current_user, 'id', None) # Use 'id' for common user ID column
+                # Assumes g.current_user is an object with 'id' and 'username' attributes
+                context['user_id'] = getattr(g.current_user, 'id', None)
                 context['username'] = getattr(g.current_user, 'username', None)
 
             if session:
@@ -357,11 +378,11 @@ class LoggingService:
 
         except RuntimeError as e:
             # This specific error usually means "outside of request context"
-            # self.app_logger.debug(f"Not in Flask request context for logging: {e}")
+            # self.app_logger.debug(f"Not in Flask request context for logging: {e}") # Enable for verbose debugging
             pass
         except Exception as e:
             # Catch any other unexpected errors when accessing Flask context
-            self.app_logger.warning(f"Error getting request context for logging: {e}")
+            self.app_logger.warning(f"Error getting request context for logging: {e}", exc_info=True)
 
         return context
 
@@ -386,8 +407,9 @@ class LoggingService:
             event_timestamp_dt = datetime.fromtimestamp(event.timestamp)
 
             # Ensure error_details and metadata are JSON strings or None
-            error_details_json = json.dumps(event.error_details) if event.error_details else None
-            metadata_json = json.dumps(event.metadata) if event.metadata else None
+            # If `error_details` or `metadata` are empty dicts, store as '{}' not 'None'
+            error_details_json = json.dumps(event.error_details) if event.error_details is not None else None
+            metadata_json = json.dumps(event.metadata) if event.metadata is not None else None
 
             self.db_manager.execute_query("""
                 INSERT INTO log_events (
@@ -419,11 +441,11 @@ class LoggingService:
             recent_events = self.cache_manager.get(recent_events_key) or []
 
             # Add new event and keep only last 100
-            # Convert timestamp to a more readable format for cached display if desired
+            # Convert timestamp to a more readable format for cached display
             event_dict = event.to_dict()
             event_dict['timestamp_iso'] = datetime.fromtimestamp(event.timestamp).isoformat()
-            recent_events.insert(0, event_dict)
-            recent_events = recent_events[:100]
+            recent_events.insert(0, event_dict) # Add to the beginning to keep most recent at top
+            recent_events = recent_events[:100] # Keep only the latest 100 events
 
             self.cache_manager.set(recent_events_key, recent_events, 3600)  # Cache for 1 hour
 
@@ -444,12 +466,15 @@ class LoggingService:
 
     def log_security_event(self, message: str, severity: str = "medium", **kwargs):
         """Log security event."""
-        level = LogLevel.WARNING if severity == "medium" else LogLevel.CRITICAL
+        # Determine log level based on severity (can be customized further)
+        level = LogLevel.WARNING if severity == "medium" else LogLevel.CRITICAL if severity == "high" else LogLevel.INFO
+        # Merge provided metadata with a default severity
+        metadata_dict = {'severity': severity, **kwargs.pop('metadata', {})}
         self.log_event(
             level,
             EventType.SECURITY_EVENT,
             message,
-            metadata={'severity': severity, **kwargs.pop('metadata', {})}, # Merge metadata
+            metadata=metadata_dict,
             **kwargs
         )
 
@@ -459,7 +484,7 @@ class LoggingService:
         self.log_event(
             level,
             EventType.PERFORMANCE_EVENT,
-            f"Performance: {operation} took {duration:.2f}s",
+            f"Performance: '{operation}' took {duration:.2f}s",
             action=operation,
             duration=duration,
             **kwargs
@@ -470,7 +495,7 @@ class LoggingService:
         error_details = {
             'error_type': type(error).__name__,
             'error_message': str(error),
-            'traceback': traceback.format_exc(),
+            'traceback': traceback.format_exc(), # Capture full traceback
             'context': context
         }
 
@@ -487,6 +512,9 @@ class LoggingService:
         metadata_dict = {'details': details} if details else {}
         if 'metadata' in kwargs and isinstance(kwargs['metadata'], dict):
             metadata_dict.update(kwargs.pop('metadata')) # Merge any additional metadata
+        else: # Ensure metadata is always a dict if provided
+             metadata_dict.update(kwargs.pop('metadata', {}))
+
 
         self.log_event(
             LogLevel.INFO,
@@ -501,16 +529,18 @@ class LoggingService:
     def log_system_health(self):
         """Log current system health metrics."""
         if not self.log_to_db:
+            self.app_logger.debug("Database logging disabled, skipping system health logging.")
             return
 
         try:
             # Get system metrics
-            cpu_usage = psutil.cpu_percent()
+            cpu_usage = psutil.cpu_percent(interval=1) # Blocking call, considers 1 sec CPU activity
             memory = psutil.virtual_memory()
             disk = psutil.disk_usage('/')
 
             # Placeholder for active connections, queue size, response time, error rate
             # These would need to be integrated from other parts of the EASM application
+            # E.g., from a web server's metrics, a task queue, or application-level counters.
             active_connections = 0
             queue_size = 0
             response_time = 0.0
@@ -538,7 +568,7 @@ class LoggingService:
                 self.log_event(
                     LogLevel.WARNING,
                     EventType.SYSTEM_EVENT,
-                    f"High CPU usage: {cpu_usage}%",
+                    f"High CPU usage detected: {cpu_usage:.2f}%",
                     metadata={'metric': 'cpu_usage', 'value': cpu_usage}
                 )
 
@@ -546,7 +576,7 @@ class LoggingService:
                 self.log_event(
                     LogLevel.WARNING,
                     EventType.SYSTEM_EVENT,
-                    f"High memory usage: {memory.percent}%",
+                    f"High memory usage detected: {memory.percent:.2f}%",
                     metadata={'metric': 'memory_usage', 'value': memory.percent}
                 )
 
@@ -554,7 +584,7 @@ class LoggingService:
                 self.log_event(
                     LogLevel.WARNING,
                     EventType.SYSTEM_EVENT,
-                    f"High disk usage: {disk.percent}%",
+                    f"High disk usage detected: {disk.percent:.2f}%",
                     metadata={'metric': 'disk_usage', 'value': disk.percent}
                 )
 
@@ -571,25 +601,25 @@ class LoggingService:
             if event_type:
                 events = self.cache_manager.get(f"recent_events:{event_type}") or []
             else:
-                # Get all recent events across types
+                # Get all recent events across types by iterating through EventType enum
                 events = []
-                for et_enum in EventType: # Iterate through the Enum members
+                for et_enum in EventType:
                     type_events = self.cache_manager.get(f"recent_events:{et_enum.value}") or []
                     events.extend(type_events)
 
-                # Sort by timestamp
+                # Sort all collected events by timestamp (most recent first)
                 events.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
 
             return events[:limit]
 
         except Exception as e:
-            self.log_error(e, "get_recent_events")
+            self.log_error(e, "get_recent_events_from_cache")
             return []
 
     def get_event_statistics(self, hours: int = 24) -> Dict[str, Any]:
         """Get event statistics for the specified time period from DB."""
         if not self.log_to_db:
-            return {'error': 'DB logging disabled'}
+            return {'error': 'DB logging disabled', 'event_counts': [], 'error_rate': 0.0, 'total_events': 0, 'time_period_hours': hours}
         try:
             cutoff_time = datetime.now() - timedelta(hours=hours)
 
@@ -601,6 +631,10 @@ class LoggingService:
                 GROUP BY event_type, level
                 ORDER BY count DESC
             """, (cutoff_time,))
+            # Defensive check: Ensure results is an iterable (list or tuple)
+            if not isinstance(event_counts, (list, tuple)):
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(event_counts).__name__} for event_counts in get_event_statistics. Expected list or tuple.")
+                event_counts = [] # Reset to empty list if unexpected type
 
             # Get error count
             error_count_results = self.db_manager.execute_query("""
@@ -608,7 +642,12 @@ class LoggingService:
                 FROM log_events
                 WHERE timestamp > %s AND level IN ('ERROR', 'CRITICAL')
             """, (cutoff_time,))
-            error_count = error_count_results[0]['count'] if error_count_results else 0
+            # Defensive check
+            if not isinstance(error_count_results, (list, tuple)) or not error_count_results:
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(error_count_results).__name__} for error_count_results in get_event_statistics. Expected list or tuple with data.")
+                error_count = 0
+            else:
+                error_count = error_count_results[0]['count'] if error_count_results[0] else 0
 
             # Get total count
             total_count_results = self.db_manager.execute_query("""
@@ -616,7 +655,12 @@ class LoggingService:
                 FROM log_events
                 WHERE timestamp > %s
             """, (cutoff_time,))
-            total_count = total_count_results[0]['count'] if total_count_results else 0
+            # Defensive check
+            if not isinstance(total_count_results, (list, tuple)) or not total_count_results:
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(total_count_results).__name__} for total_count_results in get_event_statistics. Expected list or tuple with data.")
+                total_count = 0
+            else:
+                total_count = total_count_results[0]['count'] if total_count_results[0] else 0
 
             error_rate = 0.0
             if total_count > 0:
@@ -628,10 +672,9 @@ class LoggingService:
                 'total_events': total_count,
                 'time_period_hours': hours
             }
-
         except Exception as e:
             self.log_error(e, "get_event_statistics")
-            return {'error': str(e)}
+            return {'error': str(e), 'event_counts': [], 'error_rate': 0.0, 'total_events': 0, 'time_period_hours': hours}
 
     def get_performance_summary(self, hours: int = 24) -> List[Dict[str, Any]]:
         """Get performance summary for dashboard."""
@@ -652,48 +695,55 @@ class LoggingService:
                 GROUP BY action
                 ORDER BY avg_duration DESC
                 LIMIT 10
-            """, (cutoff_time, EventType.PERFORMANCE_EVENT.value)) # Filter for performance events
+            """, (cutoff_time, EventType.PERFORMANCE_EVENT.value))
 
-            return results or []
+            # Defensive check: Ensure results is an iterable (list or tuple)
+            if not isinstance(results, (list, tuple)):
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(results).__name__} for performance summary. Expected list or tuple.")
+                return [] # Return an empty list if it's not the expected iterable type
+
+            return results or [] # This handles cases where results might be None or an empty list correctly
 
         except Exception as e:
             self.log_error(e, "get_performance_summary")
             return []
 
     def get_recent_logs(self, log_type: Optional[str] = None, limit: int = 20, **filters) -> List[Dict[str, Any]]:
-        """Get recent logs with optional filtering from DB."""
+        """
+        Get recent logs with optional filtering from DB.
+        Note: JSON field access (`metadata->>'severity'`) and case-insensitive search (`ILIKE`)
+        are PostgreSQL specific. Adjust for other database types if necessary.
+        """
         if not self.log_to_db:
             return []
         try:
-            conditions = ["1=1"] # Start with a true condition
-            params: List[Union[str, int, datetime]] = [] # Explicitly type params for clarity
+            conditions = ["1=1"] # Start with a true condition to simplify AND concatenation
+            params: List[Union[str, int, datetime, float]] = [] # Explicitly type params for clarity
 
             if log_type:
                 conditions.append("event_type = %s")
                 params.append(log_type)
 
-            # Example: Handle 'level' filter as well
             if 'level' in filters and filters['level']:
                 conditions.append("level = %s")
                 params.append(filters['level'].upper()) # Ensure level is uppercase for Enum matching
 
             if 'severity' in filters and filters['severity']:
-                # Note: JSON_EXTRACT syntax might vary slightly by DB (e.g., PostgreSQL needs '->>' operator)
-                # Assuming a JSON_EXTRACT or equivalent function is available that returns text
                 conditions.append("metadata->>'severity' = %s") # PostgreSQL JSON operator example
                 params.append(filters['severity'])
 
             if 'time_range' in filters and filters['time_range']:
                 hours_map = {'1h': 1, '24h': 24, '7d': 168, '30d': 720}
-                hours = hours_map.get(filters['time_range'], 24)
+                hours = hours_map.get(filters['time_range'], 24) # Default to 24 hours if not specified
                 cutoff_time = datetime.now() - timedelta(hours=hours)
                 conditions.append("timestamp > %s")
                 params.append(cutoff_time)
 
             if 'search_query' in filters and filters['search_query']:
                 search_term = f"%{filters['search_query']}%"
-                conditions.append("(message ILIKE %s OR username ILIKE %s OR ip_address ILIKE %s OR resource ILIKE %s)")
-                params.extend([search_term, search_term, search_term, search_term])
+                # ILIKE is PostgreSQL specific for case-insensitive LIKE
+                conditions.append("(message ILIKE %s OR username ILIKE %s OR ip_address ILIKE %s OR resource ILIKE %s OR action ILIKE %s)")
+                params.extend([search_term, search_term, search_term, search_term, search_term])
 
 
             query = f"""
@@ -713,6 +763,27 @@ class LoggingService:
             params.append(limit)
 
             results = self.db_manager.execute_query(query, params)
+
+            # Defensive check
+            if not isinstance(results, (list, tuple)):
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(results).__name__} for recent logs. Expected list or tuple.")
+                return []
+
+            # Deserialize JSON string fields back to dicts if they exist
+            for row in results:
+                # Ensure error_details is a dictionary
+                if row.get('error_details') and isinstance(row['error_details'], str):
+                    try:
+                        row['error_details'] = json.loads(row['error_details'])
+                    except json.JSONDecodeError:
+                        self.app_logger.warning(f"Failed to decode error_details JSON for log event: {row['error_details']}", exc_info=True)
+                        row['error_details'] = {} # Default to empty dict on error
+                elif row.get('error_details') is None:
+                    row['error_details'] = {} # Ensure it's a dict if None
+
+                # Note: metadata->>'severity' and 'details' are already extracted into their own columns
+                # in the SQL query. If there was a generic 'metadata' column that needed parsing,
+                # you would add a similar check here.
             return results or []
 
         except Exception as e:
@@ -726,40 +797,56 @@ class LoggingService:
         try:
             today = datetime.now().date()
 
-            # Scans today
             scans_today_results = self.db_manager.execute_query("""
                 SELECT COUNT(*) as count
                 FROM log_events
-                WHERE DATE(timestamp) = %s
-                AND event_type = %s AND action LIKE '%scan%'
-            """, (today, EventType.USER_ACTION.value)) # Assuming scan actions are user actions
-            scans_today = scans_today_results[0]['count'] if scans_today_results else 0
+                WHERE DATE(timestamp) = %s AND event_type IN (%s, %s) AND action ILIKE '%scan%'
+            """, (today, EventType.USER_ACTION.value, EventType.PERFORMANCE_EVENT.value))
+            # Defensive check
+            if not isinstance(scans_today_results, (list, tuple)) or not scans_today_results:
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(scans_today_results).__name__} for scans_today_results in get_scan_statistics. Expected list or tuple with data.")
+                scans_today = 0
+            else:
+                scans_today = scans_today_results[0]['count'] if scans_today_results[0] else 0
 
-            # Average scan time for last 7 days (performance events)
             avg_time_results = self.db_manager.execute_query("""
                 SELECT AVG(duration) as avg_duration
                 FROM log_events
-                WHERE event_type = %s AND action LIKE '%scan%'
+                WHERE event_type = %s AND action ILIKE '%scan%'
                 AND duration IS NOT NULL
                 AND timestamp > %s
             """, (EventType.PERFORMANCE_EVENT.value, datetime.now() - timedelta(days=7)))
-            avg_scan_time = avg_time_results[0]['avg_duration'] if avg_time_results and avg_time_results[0]['avg_duration'] else 0.0
+            # Defensive check
+            if not isinstance(avg_time_results, (list, tuple)) or not avg_time_results:
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(avg_time_results).__name__} for avg_time_results in get_scan_statistics. Expected list or tuple with data.")
+                avg_scan_time = 0.0
+            else:
+                avg_scan_time = avg_time_results[0]['avg_duration'] if avg_time_results[0] and avg_time_results[0]['avg_duration'] else 0.0
 
-            # Success rate for scans (last 7 days, excluding ERROR/CRITICAL level scan events)
             success_rate_results = self.db_manager.execute_query("""
                 SELECT
-                    (SUM(CASE WHEN level NOT IN ('ERROR', 'CRITICAL') THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as success_rate
+                    COUNT(*) as total_scans,
+                    SUM(CASE WHEN level NOT IN ('ERROR', 'CRITICAL') THEN 1 ELSE 0 END) as successful_scans
                 FROM log_events
-                WHERE (event_type = %s OR event_type = %s) AND action LIKE '%scan%'
+                WHERE (event_type = %s OR event_type = %s) AND action ILIKE '%scan%'
                 AND timestamp > %s
             """, (EventType.USER_ACTION.value, EventType.PERFORMANCE_EVENT.value, datetime.now() - timedelta(days=7)))
-            success_rate = success_rate_results[0]['success_rate'] if success_rate_results and success_rate_results[0]['success_rate'] else 100.0
+            # Defensive check
+            if not isinstance(success_rate_results, (list, tuple)) or not success_rate_results:
+                self.app_logger.error(f"db_manager.execute_query returned unexpected type {type(success_rate_results).__name__} for success_rate_results in get_scan_statistics. Expected list or tuple with data.")
+                total_scans = 0
+                successful_scans = 0
+            else:
+                total_scans = success_rate_results[0]['total_scans'] if success_rate_results[0] else 0
+                successful_scans = success_rate_results[0]['successful_scans'] if success_rate_results[0] else 0
+
+            success_rate = (successful_scans / total_scans) * 100.0 if total_scans > 0 else 100.0
 
             return {
                 'scans_today': scans_today,
                 'avg_scan_time': avg_scan_time,
                 'success_rate': success_rate,
-                'active_tasks': 0  # This would need to be implemented with a dedicated task manager
+                'active_tasks': 0
             }
 
         except Exception as e:
@@ -768,13 +855,17 @@ class LoggingService:
                 'scans_today': 0,
                 'avg_scan_time': 0.0,
                 'success_rate': 100.0,
-                'active_tasks': 0
+                'active_tasks': 0,
+                'error': str(e)
             }
 
 
 # Decorators for automatic logging
 def log_performance(operation_name: Optional[str] = None):
-    """Decorator to log function performance."""
+    """
+    Decorator to log function performance.
+    Requires `g.logging_service` to be available in Flask context.
+    """
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -786,30 +877,31 @@ def log_performance(operation_name: Optional[str] = None):
                 result = func(*args, **kwargs)
                 duration = time.time() - start_time
 
-                # Check if logging_service is initialized and accessible
+                # Check if logging_service is initialized and accessible via Flask's g object
                 if hasattr(g, 'logging_service') and g.logging_service:
                     g.logging_service.log_performance_event(op_name, duration)
                 else:
                     # Fallback if logging_service isn't in g (e.g., direct function call, not Flask request)
-                    # This implies you might need a way to get the logging_service instance
-                    # outside of Flask's g object if this decorator is used broadly.
-                    # For now, print a warning or fallback to standard logging.
-                    logging.getLogger(__name__).debug(f"LoggingService not found in g. Performance of {op_name} took {duration:.2f}s.")
+                    logging.getLogger(func.__module__).debug(f"LoggingService not found in g. Performance of {op_name} took {duration:.2f}s.")
                 return result
 
             except Exception as e:
                 duration = time.time() - start_time
                 if hasattr(g, 'logging_service') and g.logging_service:
                     g.logging_service.log_error(e, op_name)
+                    # Log performance even on failure
                     g.logging_service.log_performance_event(f"{op_name}_failed", duration)
                 else:
-                    logging.getLogger(__name__).exception(f"Error in {op_name} and LoggingService not available.")
+                    logging.getLogger(func.__module__).exception(f"Error in {op_name} and LoggingService not available.")
                 raise # Re-raise the exception after logging
         return wrapper
     return decorator
 
 def log_user_action(action: str, resource: Optional[str] = None):
-    """Decorator to log user actions."""
+    """
+    Decorator to log user actions.
+    Requires `g.logging_service` to be available in Flask context.
+    """
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -819,14 +911,14 @@ def log_user_action(action: str, resource: Optional[str] = None):
                 if hasattr(g, 'logging_service') and g.logging_service:
                     g.logging_service.log_user_action(action, resource)
                 else:
-                    logging.getLogger(__name__).debug(f"LoggingService not found in g. User action: {action} on {resource}.")
+                    logging.getLogger(func.__module__).debug(f"LoggingService not found in g. User action: {action} on {resource}.")
                 return result
 
             except Exception as e:
                 if hasattr(g, 'logging_service') and g.logging_service:
                     g.logging_service.log_error(e, f"user_action_{action}")
                 else:
-                    logging.getLogger(__name__).exception(f"Error during user action {action} and LoggingService not available.")
+                    logging.getLogger(func.__module__).exception(f"Error during user action {action} and LoggingService not available.")
                 raise # Re-raise the exception after logging
         return wrapper
     return decorator
@@ -841,7 +933,17 @@ def get_logging_service() -> LoggingService:
     return logging_service
 
 def init_logging_service(db_manager: Any, cache_manager: Any, config: Dict[str, Any]) -> LoggingService:
-    """Initialize the global logging service."""
+    """
+    Initialize the global logging service.
+
+    Args:
+        db_manager: An object managing database connections and queries.
+        cache_manager: An object managing cache operations.
+        config: A dictionary containing logging configuration.
+
+    Returns:
+        The initialized LoggingService instance.
+    """
     global logging_service
     if logging_service is not None:
         logging.getLogger(__name__).warning("LoggingService already initialized. Re-initializing.")

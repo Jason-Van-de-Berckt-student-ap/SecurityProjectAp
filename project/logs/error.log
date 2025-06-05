@@ -1,1 +1,4 @@
 2025-06-03 21:11:04,085 - easm.error - ERROR - [error_event] Error in get_scan_statistics: 'int' object is not subscriptable
+2025-06-03 22:17:54,926 - easm.error - ERROR - [error_event] Error in get_scan_statistics: 'int' object is not subscriptable
+2025-06-03 22:24:32,668 - easm.error - ERROR - [error_event] Error in get_recent_logs_from_db: 'int' object is not iterable
+2025-06-03 22:24:32,669 - easm.error - ERROR - [error_event] Error in get_recent_logs_from_db: 'int' object is not iterable

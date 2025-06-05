@@ -289,3 +289,153 @@
 2025-06-03 21:35:21,173 - easm.app - INFO - [user_action] User action: GET static
 2025-06-03 21:35:21,400 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
 2025-06-03 21:35:21,422 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:54:55,610 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 21:54:55,611 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 21:54:55,614 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 21:54:56,675 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 21:54:56,676 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 21:54:56,687 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 21:55:06,539 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:55:06,578 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:41,449 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:41,474 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:42,251 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:42,271 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:42,651 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:42,672 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:42,913 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:42,931 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:43,158 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:43,180 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:50,632 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 21:57:50,635 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 21:57:50,637 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 21:57:51,536 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 21:57:51,537 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 21:57:51,541 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 21:57:57,323 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:57,345 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:57,957 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:57,979 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:58,331 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:58,356 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:57:58,682 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:57:58,703 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:58:02,981 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 21:58:16,623 - easm.app - INFO - [user_action] User action: HEAD static
+2025-06-03 21:58:23,297 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:58:30,595 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:58:38,226 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 21:58:43,185 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 21:58:57,107 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:59:24,029 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 21:59:24,045 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 21:59:25,456 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 21:59:30,550 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 22:16:37,111 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 22:16:37,112 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 22:16:37,115 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 22:16:37,989 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 22:16:37,989 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 22:16:37,993 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 22:16:45,142 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:16:45,190 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 22:16:45,205 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:16:56,466 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:17:07,702 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:17:39,712 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 22:17:39,778 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:17:39,804 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:17:54,918 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 22:23:53,372 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 22:23:53,373 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 22:23:53,376 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 22:23:54,236 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 22:23:54,237 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 22:23:54,239 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 22:23:59,663 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:24:03,430 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:24:03,466 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:24:07,540 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 22:24:07,584 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:24:08,985 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:24:20,731 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 22:24:20,784 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:24:20,811 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:24:22,300 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:24:25,606 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 22:24:25,635 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:24:27,089 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:24:32,664 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 22:28:09,743 - easm.app - INFO - Logging database tables initialized successfully.
+2025-06-03 22:28:09,744 - easm.app - INFO - Log cleanup task scheduled to run every 24 hours, starting in 3600 seconds.
+2025-06-03 22:28:09,748 - easm.app - INFO - [system_event] Application services initialized successfully
+2025-06-03 22:28:13,441 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 22:28:23,022 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 22:28:25,636 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:28:38,362 - easm.app - INFO - [user_action] User action: POST auth.login
+2025-06-03 22:28:38,415 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:28:38,453 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:28:49,653 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 22:28:49,654 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for performance summary. Expected list or tuple.
+2025-06-03 22:28:49,654 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:28:49,655 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:28:49,656 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for scans_today_results in get_scan_statistics. Expected list or tuple with data.
+2025-06-03 22:28:49,657 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for avg_time_results in get_scan_statistics. Expected list or tuple with data.
+2025-06-03 22:28:49,657 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for success_rate_results in get_scan_statistics. Expected list or tuple with data.
+2025-06-03 22:28:49,821 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:28:58,044 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:28:58,047 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:28:58,093 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:01,647 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:01,649 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:01,671 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:02,354 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:02,357 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:02,377 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:02,936 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:02,938 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:02,957 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:06,228 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:06,230 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:06,252 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:07,658 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:07,659 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:07,723 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:23,030 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:23,032 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:23,061 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:25,709 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:25,710 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:25,731 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:26,316 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:26,317 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:26,338 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:26,542 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:29:26,543 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:29:26,564 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:29:40,776 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 22:29:49,903 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 22:30:19,902 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 22:30:46,687 - easm.app - INFO - [user_action] User action: GET monitoring.performance_page
+2025-06-03 22:31:30,202 - easm.app - INFO - [user_action] User action: GET monitoring.users_page
+2025-06-03 22:31:38,653 - easm.app - INFO - [user_action] User action: GET auth.profile
+2025-06-03 22:31:46,824 - easm.app - INFO - [user_action] User action: GET monitoring.logs_page
+2025-06-03 22:31:46,826 - easm.app - ERROR - db_manager.execute_query returned unexpected type int for recent logs. Expected list or tuple.
+2025-06-03 22:31:46,853 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:32:04,726 - easm.app - INFO - [user_action] User action: GET None
+2025-06-03 22:32:13,563 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 22:32:13,599 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:32:16,276 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:32:16,307 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:32:20,979 - easm.app - INFO - [user_action] User action: GET single_scan.scan_history
+2025-06-03 22:32:21,007 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:32:22,749 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:32:22,777 - easm.app - INFO - [user_action] User action: GET static
+2025-06-03 22:35:04,221 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:35:04,233 - easm.app - INFO - [user_action] User action: GET auth.login
+2025-06-03 22:35:04,241 - easm.app - INFO - [user_action] User action: GET auth.register
+2025-06-03 22:35:04,353 - easm.app - INFO - [user_action] User action: GET monitoring.dashboard
+2025-06-03 22:35:04,556 - easm.app - INFO - [user_action] User action: GET single_scan.index
+2025-06-03 22:35:04,579 - easm.app - INFO - [user_action] User action: GET health.basic_health
+2025-06-03 22:35:04,586 - easm.app - INFO - [user_action] User action: GET single_scan.index

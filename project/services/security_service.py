@@ -378,7 +378,6 @@ class SecurityService:
                                           salt.encode('utf-8'),
                                           100000)
         return password_hash.hex() == stored_hash
-    
     def get_security_headers(self) -> Dict[str, str]:
         """Get security headers for HTTP responses."""
         return {
@@ -386,7 +385,7 @@ class SecurityService:
             'X-Frame-Options': 'DENY',
             'X-XSS-Protection': '1; mode=block',
             'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-            'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+            'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com",
             'Referrer-Policy': 'strict-origin-when-cross-origin',
             'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
         }
